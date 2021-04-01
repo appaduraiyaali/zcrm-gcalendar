@@ -1,0 +1,27 @@
+.btn.btn-xs.btn-primary.active{
+    background: #ffffff;
+    color: white;
+    box-shadow: inset 1px 0px 20px 20px #00bc3a;
+    font-weight: bold;
+}
+.btn.btn-xs.btn-primary{
+    background: #f8f8f8;
+    color: #00867a;
+    font-family: sans-serif;
+    font-size: 14px;
+    box-shadow: inset 0px 0 0px 0px grey;
+}
+.panel{
+border:0;
+box-shadow: 0 0 0 0;
+}
+.btn.btn-xs.btn-success{
+        color: #3b3d80;
+    background-color: #eeeeff;
+    border-color: #dcdcdc;
+}.query-builder .rules-group-container{
+//border: 1px solid #dcc896;
+   // background: rgba(250,240,210,.5);
+   border: 1px solid #d4d4d4;
+    background: rgba(255,255,255,.5);
+}
