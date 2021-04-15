@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Users List</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+  <link rel="stylesheet" href="jQuery-QueryBuilder-master/dist/css/query-builder.default.min.css">
+  <script src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dot/1.1.3/doT.min.js" integrity="sha512-mv9iHAP8cyGYB1TX54qMIFYFbHpFoqo1StdcuIUoAxTXIiFfOu22TjJGrFMpY+iR4QmGkElLlHBVx5C+PiIdvg==" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jquery-extendext@1.0.0/jquery-extendext.min.js"></script>
+  <script src="https://cdnjs.com/libraries/moment.js"></script>
+  <script src="jQuery-QueryBuilder-master/dist/js/query-builder.standalone.min.js"></script>
+</head>
+<body>
+
+<div class="container" style="width:700px;">
+  <h2>Users List</h2> 
+  
+<a data-toggle="modal" data-target="#usersmodal" class="btn btn-primary pull-right"><span class="glyphicon glyphicon-plus"></span>  Create User </a> 
+<a href="dashboard.html" class="btn btn-primary pull-right" style="margin-right:10px;margin-bottom:20px;"><span class="glyphicon glyphicon-th-list"></span>  Rules List </a> 
+  <table class="table table-bordered table-hover">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Status</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Jhon Doe</td>
+        <td>jhon@yopmail.com</td>
+        <td><span class="label label-success">Active</span></td>
+        <td>
+			<div class="dropdown">
+				<button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown">Actions
+				<span class="caret"></span></button>
+				<ul class="dropdown-menu">
+				  <li><a href="#">Enable/Disable</a></li>
+				  <li><a href="#">Delete</a></li>
+				</ul>
+			</div>
+		</td>
+      </tr>
+
+
+      <tr>
+        <td>Jhon Doe</td>
+        <td>jhon@yopmail.com</td>
+        <td><span class="label label-success">Active</span></td>
+        <td>
+			<div class="dropdown">
+				<button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown">Actions
+				<span class="caret"></span></button>
+				<ul class="dropdown-menu">
+				  <li><a href="#">Enable/Disable</a></li>
+				  <li><a href="#">Delete</a></li>
+				</ul>
+			</div>
+		</td>
+      </tr>
+	  
+
+      <tr>
+        <td>Jhon Doe</td>
+        <td>jhon@yopmail.com</td>
+        <td><span class="label label-success">Active</span></td>
+        <td>
+			<div class="dropdown">
+				<button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown">Actions
+				<span class="caret"></span></button>
+				<ul class="dropdown-menu">
+				  <li><a href="#">Enable/Disable</a></li>
+				  <li><a href="#">Delete</a></li>
+				</ul>
+			</div>
+		</td>
+      </tr>
+	  
+
+      <tr>
+        <td>Jhon Doe</td>
+        <td>jhon@yopmail.com</td>
+        <td><span class="label label-success">Active</span></td>
+        <td>
+			<div class="dropdown">
+				<button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown">Actions
+				<span class="caret"></span></button>
+				<ul class="dropdown-menu">
+				  <li><a href="#">Enable/Disable</a></li>
+				  <li><a href="#">Delete</a></li>
+				</ul>
+			</div>
+		</td>
+      </tr>
+
+
+
+
+
+
+
+	  
+	  </tbody>
+  </table>
+
+
+ <!-- Modal -->
+  <div class="modal fade" id="usersmodal" role="dialog">
+    <div class="modal-dialog modal-md">
+    
+      <!-- Modal content-->
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          <h4 class="modal-title">User Creation</h4>
+        </div>
+        <div class="modal-body">
+				<div class="panel panel-default">
+					<div class="panel-body form-horizontal">
+						<div class="form-group">
+						  <label class="control-label col-sm-3" for="username">User Name:</label>
+						  <div class="col-sm-7">
+							<input type="text" class="form-control" id="username" placeholder="Enter name of the User.." name="username" value="">
+						  </div>
+						</div>
+						
+						<div class="form-group">
+						  <label class="control-label col-sm-3" for="useremail">Email:</label>
+						  <div class="col-sm-7">
+							<input type="email" class="form-control" id="useremail" placeholder="Enter Email address to be watched.. " name="useremail" value="">
+						  </div>
+						</div>
+					</div>
+				</div>
+
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Add user</button>
+        </div>
+      </div>
+      
+    </div>
+  </div>
+ <!-- Modal -->
+</div>
+
+
+
+<script src="userslist.js"></script>
+<link rel="stylesheet" href="userslist.css">
+</body>
+</html>
