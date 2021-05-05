@@ -63,6 +63,8 @@ function addUser($gsuiteemail)
 				  if ($queryresult === TRUE) {
 					  $last_id = $conn->insert_id;
 					  trigger_error( "New Calendarconfig record created successfully " .$last_id);
+					  $result["status"]='success';
+                        $result['message']="User Email - ".$gsuiteemail." has been added to watch events Successfully..";
 						} else {
 					  trigger_error( "Error: " . $calendarsql . "<br>" . mysqli_error($conn));
 					}		

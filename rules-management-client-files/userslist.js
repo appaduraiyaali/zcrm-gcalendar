@@ -27,8 +27,11 @@ $scope.adduser=function(email){
 				var addrequestdata = JSON.parse(data);
 				console.log("addrequestdata"); 
 				console.log(addrequestdata);
-					if(addrequestdata.status=="failure"){
+					if(addrequestdata.status=="failure"&&addrequestdata.reason.includes("already exist")){
 						alert(addrequestdata.reason);
+					}
+					if(addrequestdata.status=="failure"&&!addrequestdata.reason.includes("already exist")){
+						alert("User Email not available in GSuite..");
 					}
 					if(addrequestdata.status=="success"){
 						alert("User Email Added Successfully..");
