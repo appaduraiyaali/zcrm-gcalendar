@@ -1,6 +1,7 @@
 <?php
 require_once(__DIR__.DIRECTORY_SEPARATOR.'config.inc.php');
 //runSampleQuery();
+getMysqlConnection();
 function getMysqlConnection()
 {
 	$servername = DBSERVER;
@@ -9,9 +10,9 @@ function getMysqlConnection()
     $dbname=DBNAME;
 
     $conn =mysqli_connect($servername, $username, $password,$dbname);
-	trigger_error('Mysql Connection ' . $conn);     
+	//trigger_error('Mysql Connection ' . $conn);     
     if ($conn) {
-      trigger_error("Connection success: ");
+      //trigger_error("Connection success: ");
     } else {
             trigger_error('error:'.mysqli_error($conn));
     }    
@@ -23,6 +24,8 @@ function closeConnection($conn)
 	mysqli_close($conn);
 
 }
+
+
 
 function runSampleQuery()
 {

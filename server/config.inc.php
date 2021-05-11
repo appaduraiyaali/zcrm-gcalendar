@@ -53,7 +53,11 @@
    define ('DATE_FORMAT', 'Y-m-d\TH:i:s\Z');
    define ('DEPLOYMENT', 'PRODUCTION');
    define('ZURL','https://www.zohoapis.com/crm/v2/');
-   define('SESSIONFOLDER','C:\xampp\htdocs\lacure-calendar\app\sessionfolder');
+    define('DBNAME','zcrmgcalendar');
+   define('DBSERVER','localhost');
+   define('DBUSER','root');
+   define('DBPWD','');
+   define('SUBJECTEMAIL','appadurai@yaalidatrixproj.com');
   // define('ZURL','https://sandbox.zohoapis.com/crm/v2/');
 	define ('CONFIGFILE', 'C:\lacureconfig\application.config');
 	set_include_path(get_include_path() . PATH_SEPARATOR . '..');    

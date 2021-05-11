@@ -1,30 +1,45 @@
 <?php
+//echo phpinfo();
 require_once(__DIR__.DIRECTORY_SEPARATOR.'config.inc.php');
+require_once(__DIR__.DIRECTORY_SEPARATOR.'EventManagement.php');
+
 include_once __DIR__ . '/google-api-php-client--PHP8.0/vendor/autoload.php';
 
 use ReallySimpleJWT\Token;
-//putenv('GOOGLE_APPLICATION_CREDENTIALS='.__DIR__.'/gsuitecredentials.json');
-putenv('GOOGLE_APPLICATION_CREDENTIALS='.__DIR__.'/keywordrepo-8ed71daeee65.json');
-doFullCalendarEventsSynch();
-
+putenv('GOOGLE_APPLICATION_CREDENTIALS='.__DIR__.'/gsuitecredentials.json');
+//putenv('GOOGLE_APPLICATION_CREDENTIALS='.__DIR__.'/keywordrepo-8ed71daeee65.json');
+//doFullCalendarEventsSynch('appadurai@yaalidatrixproj.com');
+//checkUserExistGsuite('paolo@bytekmarketing.it');
+//connectGoogleClient();
+//setWatcher('appadurai@yaalidatrixproj.com','20fdedbf0-a845-11e3-1515e2-0800200c9a6689111');
+fetchEventsFromSyncToken('primary','CLD1k4zqpPACELD1k4zqpPACGAUgyv7jrwE=','appadurai@yaalidatrixproj.com'); //CLD1k4zqpPACELD1k4zqpPACGAUgyv7jrwE=
 function connectGoogleClient()
 {
+
 	$client = new Google\Client();
 	$client->useApplicationDefaultCredentials();
 	$client->setApplicationName("Client_Library_Examples");
-	//$client->setSubject('appadurai@yaalidatrixproj.com');
-	$client->setSubject('paolo@bytekmarketing.it');
-	$client->setScopes(['https://www.googleapis.com/auth/calendar','https://www.googleapis.com/auth/calendar.events']);	
+	$client->setSubject('appadurai@yaalidatrixproj.com');
+	//$client->setSubject('paolo@bytekmarketing.it');
+	$client->setScopes(['https://www.googleapis.com/auth/calendar','https://www.googleapis.com/auth/calendar.events','https://www.googleapis.com/auth/admin.directory.user']);	
 	//$client->fetchAccessTokenWithAssertion();
-	$service = new Google_Service_Calendar($client);
-/*
-$channel =  new Google_Service_Calendar_Channel($client);
-$channel->setId('20fdedbf0-a845-11e3-1515e2-0800200c9a6689111');
-$channel->setType('web_hook');
-$channel->setAddress('https://d40okpmrbb5wv.cloudfront.net/gsuitecalendar/NotificationReciever.php');
-$watchEvent = $service->events->watch('primary', $channel);
-trigger_error('Watch Response ' . json_encode($watchEvent));
-*/
+	$service= new Google_Service_Directory($client);
+	$users = $service->users;
+	trigger_error('Users ' . $users);
+	$temp=array();
+	try{
+	$userinfo=$users->get('appadur12ai@yaalidatrixproj.com',$temp);
+	trigger_error('User List ' . $userinfo->getCustomerId());
+
+	}catch(Exception $e)
+	{
+		trigger_error($e->getMessage());
+	}
+		if(true)
+	{
+		return;
+	}
+
 $calendarId = 'primary';
 $optParams = array(
   'maxResults' => 10,
@@ -42,13 +57,90 @@ trigger_error('Events ' . json_encode($events));
 }
 
 
-function doFullCalendarEventsSynch()
+function setWatcher($useremail,$watcherid)
 {
+	$result=array();
+	try{
+		$client = new Google\Client();
+		$client->useApplicationDefaultCredentials();
+		$client->setApplicationName("Client_Library_Examples");
+		$client->setSubject($useremail);
+		//$client->setSubject('paolo@bytekmarketing.it');
+		$client->setScopes(['https://www.googleapis.com/auth/calendar','https://www.googleapis.com/auth/calendar.events','https://www.googleapis.com/auth/admin.directory.user']);	
+		$service = new Google_Service_Calendar($client);
+		$channel =  new Google_Service_Calendar_Channel($client);
+		$channel->setId($watcherid);
+		$channel->setType('web_hook');
+		$channel->setResourceId($useremail.'_primary');
+		$channel->setToken($useremail);
+		$channel->setAddress('https://d40okpmrbb5wv.cloudfront.net/gsuitecalendar/NotificationReciever.php');
+		trigger_error('Event class ' . $service->events); // Google_Service_Calendar_Resource_Events
+		trigger_error('Calendar List ' . $service->calendarList);
+		$calendarlist=$service->calendarList->listCalendarList(); // Google_Service_Calendar_CalendarList
+		trigger_error('Calendar List ' . json_encode($calendarlist->items));
+		
+		$watchEvent = $service->events->watch('primary', $channel);
+		trigger_error('Watch Response ' . json_encode($watchEvent));
+	}catch(Exception $e)
+	{
+		trigger_error($e->getMessage());
+		$result['status']='failure';
+		$result['error']=$e->getMessage();
+		
+	}
+}
+
+
+function checkUserExistGsuite($useremail)
+{
+	$result=array('status'=>'','userexist'=>'','guserid'=>'','error'=>'');
+	$client = new Google\Client();
+	$client->useApplicationDefaultCredentials();
+	$client->setApplicationName("Client_Library_Examples");
+	$client->setSubject(SUBJECTEMAIL);
+	//$client->setSubject('paolo@bytekmarketing.it');
+	$client->setScopes(['https://www.googleapis.com/auth/calendar','https://www.googleapis.com/auth/calendar.events','https://www.googleapis.com/auth/admin.directory.user']);	
+	//$client->fetchAccessTokenWithAssertion();
+	$service= new Google_Service_Directory($client);
+	$users = $service->users;
+	trigger_error('Users ' . $users);
+	$temp=array();
+	try{
+
+		$userinfo=$users->get($useremail,$temp); //Google_Service_Directory_User
+		$gsuiteid=$userinfo->getCustomerId();
+		if($gsuiteid != null)
+		{
+			trigger_error('User Id in Gsuite ' . $userinfo->getCustomerId());
+			$result['status']='success';
+			$result['userexist']='true';
+			$result['guserid']=$gsuiteid;
+			
+		}else{
+			$result['status']='success';
+			$result['userexist']='false';
+			
+		}
+		
+	}catch(Exception $e)
+	{
+		trigger_error($e->getMessage());
+		$result['status']='failure';
+		$result['error']=$e->getMessage();
+		
+	}
+	return $result;
+}
+
+function doFullCalendarEventsSynch($useremail)
+{
+
+	$result=array();
 	$client = new Google\Client();
 	$client->useApplicationDefaultCredentials();
 	$client->setApplicationName("Client_Library_Examples");
 	//$client->setSubject('appadurai@yaalidatrixproj.com');
-	$client->setSubject('paolo@bytekmarketing.it');
+	$client->setSubject($useremail);
 	$client->setScopes(['https://www.googleapis.com/auth/calendar','https://www.googleapis.com/auth/calendar.events']);	
 	//$client->fetchAccessTokenWithAssertion();
 	$service = new Google_Service_Calendar($client);
@@ -57,22 +149,124 @@ function doFullCalendarEventsSynch()
 	  'maxResults' => 2000,
 	  'singleEvents' => true  
 	);
+	/*
+	$calendarsList=$service->calendarList->listCalendarList()->getItems( );
+	trigger_error('Calendars ' . json_encode($calendarsList));
+	foreach($calendarsList as $calendar)
+	{
+		trigger_error('Calendar Id ' . $calendar->getId());
+	}
+	*/
+
 	$nextpage=null;
-	do{
-		if($nextpage != null)
-		{
-			$optParams['pageToken']=$nextpage;
-		}
-		$results = $service->events->listEvents($calendarId, $optParams);
-		$nextpage=$results->getNextPageToken( );
-		trigger_error('Event Next Sync Token ' . $results->getNextSyncToken( ));
-		trigger_error('Event Next Page ' . $nextpage);
-		$events = $results->getItems();
-		trigger_error('Events ' . json_encode($events,JSON_UNESCAPED_SLASHES ));
-	}while(!empty($nextpage));
-	
+	try{
+		do{
+			if($nextpage != null)
+			{
+				$optParams['pageToken']=$nextpage;
+			}
+			$results = $service->events->listEvents($calendarId, $optParams);
+			$nextpage=$results->getNextPageToken( );
+			if(empty($nextpage))
+			{
+				$nexteventsynctoken=$results->getNextSyncToken();
+				$result['status']='success';
+				$result['nexteventsynctoken']=$nexteventsynctoken;
+			}
+			trigger_error('Event Next Sync Token ' . $results->getNextSyncToken( ));
+			trigger_error('Event Next Page ' . $nextpage);
+			$events = $results->getItems();
+			trigger_error('Events ' . json_encode($events,JSON_UNESCAPED_SLASHES ));
+		}while(!empty($nextpage));
+		
+	}catch(Exception $e)
+	{
+		trigger_error($e->getMessage());
+		$result['status']='failure';
+		$result['error']=$e->getMessage();		
+	}
+	return $result;
 }
 
+function fetchEventsFromSyncToken($calendarId, $synctoken,$useremail)
+{
+	$response=array();
+	try
+	{
+		$client = new Google\Client();
+		$client->useApplicationDefaultCredentials();
+		$client->setApplicationName("Client_Library_Examples");
+		//$client->setSubject('appadurai@yaalidatrixproj.com');
+		$client->setSubject($useremail);
+		$client->setScopes(['https://www.googleapis.com/auth/calendar','https://www.googleapis.com/auth/calendar.events']);	
+		//$client->fetchAccessTokenWithAssertion();
+		$service = new Google_Service_Calendar($client);
+		trigger_error('Event class ' . $service->events);
+		$optParams = array(
+	  'syncToken' => $synctoken
+	);
+		$results = $service->events->listEvents($calendarId, $optParams); //Google_Service_Calendar_Resource_Events -> Google_Service_Calendar_Events
+			$nextpage=$results->getNextPageToken( );
+			if(empty($nextpage))
+			{
+				$nexteventsynctoken=$results->getNextSyncToken();
+				$result['status']='success';
+				$result['nexteventsynctoken']=$nexteventsynctoken;
+			}
+			trigger_error('Event Next Sync Token ' . $results->getNextSyncToken( ));
+			trigger_error('Event Next Page ' . $nextpage);
+			$events = $results->getItems();
+			trigger_error('Events List ' . json_encode($events));
+			foreach($events as $theevent)
+			{
+				$eventcreated=$theevent['created'];
+				$desc=$theevent['description'];
+				$geventid=$theevent['id'];
+				
+				$status=$theevent['status'];
+				$summary=$theevent['summary'];
+				$updated=$theevent['updated'];
+				$organizerjson=$theevent['organizer'];
+				$organizer=$organizerjson['email'];
+				$creatorjson=$theevent['creator'];
+				$creator=$creatorjson['email'];
+				$eventstart=$theevent['start']['dateTime'];
+				$eventend=$theevent['end']['dateTime'];
+				$attendees=$theevent['attendees'];
+
+				foreach($attendees as $attendee)
+				{
+					$attemail=$attendee['email'];
+					$attresponse=$attendee['responseStatus'];
+					
+				}
+				$eventresult=fetchEventFromGEventId($geventid);
+				if($eventresult['status'] == 'success_withnodata')
+				{
+					// Add Event data into db
+					addEvent($theevent);
+				}else if($eventresult['status'] == 'success')
+				{
+					//check for modified record and update
+					checkModifiedEvent($theevent);
+				}else{
+					trigger_error('Something wrong happend while fetching event details for $geventid ' . json_encode($eventresult));
+				}
+
+			}
+		
+	}catch(Exception $e)
+	{
+
+		trigger_error('Unable to fetch events for calendar ' . $calendarid . ' at synctoken ' . $synctoken . ' due to error ' . $e->getMessage());
+		$response['status']='failure';
+		$response['reason']=$e->getMessage();
+	}
+}
+
+
+
+/**
 function generateToken()
 {
 	$header = json_encode([ 'alg' => 'RS256','typ' => 'JWT']);
@@ -101,3 +295,4 @@ trigger_error('!!!!!!!!!!!B64 Payload ' . $base64UrlPayload);
 	trigger_error('JWT Token ' . $jwttoken);
 
 }
+*/

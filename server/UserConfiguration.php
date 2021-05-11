@@ -2,7 +2,7 @@
 require_once(__DIR__.DIRECTORY_SEPARATOR.'DBUtility.php');
 require_once(__DIR__.DIRECTORY_SEPARATOR.'GCalendarOperation.php');
 
-addUser('appadurai@yaalidatrixproj.com');
+addUser('appadurai1@yaalidatrixproj.com');
 //fetchallusers();
 //removeUser('dummyuser@test.com');
 
@@ -44,6 +44,7 @@ function addUser($gsuiteemail)
 			$userdataarr=array();
 			if($conn)
 			{
+				mysqli_select_db($conn, $dbname);
 				$guserid=$gcheckresult['guserid'];
 				$syncresult=doFullCalendarEventsSynch($gsuiteemail);
 				if($syncresult['status'] == 'success')
@@ -63,17 +64,14 @@ function addUser($gsuiteemail)
 				  if ($queryresult === TRUE) {
 					  $last_id = $conn->insert_id;
 					  trigger_error( "New Calendarconfig record created successfully " .$last_id);
-					  $result["status"]='success';
-                        $result['message']="User Email - ".$gsuiteemail." has been added to watch events Successfully..";
+					  setWatcher($gsuiteemail,'20fdedbf0-a845-11e3-1515e2-0800200c9a6689111');
 						} else {
 					  trigger_error( "Error: " . $calendarsql . "<br>" . mysqli_error($conn));
 					}		
 
 				} else {
 				  trigger_error( "Error: " . $usersql . "<br>" . mysqli_error($conn));
-				}
-
-				
+				}			
 
 			}
 			closeConnection($conn);
