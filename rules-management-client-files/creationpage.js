@@ -9,7 +9,7 @@ var rules_basic = {
 $('#builder-basic').queryBuilder({
   
   filters: [{
-    id: 'title',
+    id: 'summary',
     label: 'Title',
     type: 'string',
     input: 'text',
@@ -40,8 +40,34 @@ $('#btn-set').on('click', function() {
 
 $('#btn-get').on('click', function() {
   var result = $('#builder-basic').queryBuilder('getRules');
-  
+  var requestdata = {};
+  requestdata.rulename = $("#rulename").val();
+  requestdata.projectid = $("#projectid").val();
+  requestdata.priority = $("#priority").val();
+  requestdata.description = $("#description").val();
   if (!$.isEmptyObject(result)) {
-    console.log(JSON.stringify(result, null, 2));
+      requestdata.rulesdata = result;
+      
+      requeststring = JSON.stringify(requestdata, null, 2);
+    console.log("Complete Requestdata..");
+    console.log(requestdata);
+    console.log("Complete Requestdata in string..");
+    console.log(requeststring);
+    /*$.ajax({
+        contentType: 'application/json',
+        data: requeststring,
+        dataType: 'json',
+        success: function(response) {
+            console.log("response");
+            console.log(response);
+        },
+        error: function(reason){
+            console.log("Failed..");
+            console.log(reason);
+        },
+        processData: false,
+        type: 'POST',
+        url: 'https://crmprojects.bizappln.com/gcal-integration/gcalserver/rar-files-sent-locally/server/RuleProcessor.php'
+    });*/
   }
 });
