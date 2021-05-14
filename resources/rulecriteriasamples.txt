@@ -1,0 +1,138 @@
+----------------------------------Level 1 ----------------------------------------
+{
+  "condition": "OR",
+  "rules": [
+    {
+      "id": "summary",
+      "field": "summary",
+      "type": "string",
+      "input": "text",
+      "operator": "contains",
+      "value": "Test"
+    },
+    {
+      "id": "description",
+      "field": "description",
+      "type": "string",
+      "input": "text",
+      "operator": "contains",
+      "value": "Note"
+    },
+    {
+      "id": "email",
+      "field": "email",
+      "type": "string",
+      "input": "text",
+      "operator": "contains",
+      "value": "appadurai"
+    }
+  ],
+  "valid": true
+}
+--------------------------- Level 2(cond1 or cond2) AND (cond3 or cond4) --------------------------------------------------
+{
+  "condition": "AND",
+  "rules": [
+    {
+      "condition": "OR",
+      "rules": [
+        {
+          "id": "title",
+          "field": "title",
+          "type": "string",
+          "input": "text",
+          "operator": "contains",
+          "value": "1"
+        },
+        {
+          "id": "description",
+          "field": "description",
+          "type": "string",
+          "input": "text",
+          "operator": "contains",
+          "value": "2"
+        }
+      ]
+    },
+    {
+      "condition": "OR",
+      "rules": [
+        {
+          "id": "description",
+          "field": "description",
+          "type": "string",
+          "input": "text",
+          "operator": "contains",
+          "value": "3"
+        },
+        {
+          "id": "email",
+          "field": "email",
+          "type": "string",
+          "input": "text",
+          "operator": "contains",
+          "value": "4"
+        }
+      ]
+    }
+  ],
+  "valid": true
+}
+
+--------------------------------------------------------------Level 3-----------------------------------------------------
+{
+  "condition": "AND",
+  "rules": [
+    {
+      "id": "summary",
+      "field": "summary",
+      "type": "string",
+      "input": "text",
+      "operator": "contains",
+      "value": "TestAppa"
+    },
+    {
+      "condition": "OR",
+      "rules": [
+        {
+          "id": "email",
+          "field": "email",
+          "type": "string",
+          "input": "text",
+          "operator": "contains",
+          "value": "appadi"
+        },
+        {
+          "id": "email",
+          "field": "email",
+          "type": "string",
+          "input": "text",
+          "operator": "contains",
+          "value": "appadurai"
+        },
+        {
+          "condition": "OR",
+          "rules": [
+            {
+              "id": "description",
+              "field": "description",
+              "type": "string",
+              "input": "text",
+              "operator": "contains",
+              "value": "Note"
+            },
+            {
+              "id": "description",
+              "field": "description",
+              "type": "string",
+              "input": "text",
+              "operator": "contains",
+              "value": "Test"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "valid": true
+}
