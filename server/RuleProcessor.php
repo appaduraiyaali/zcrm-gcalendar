@@ -5,7 +5,7 @@ require_once(__DIR__.DIRECTORY_SEPARATOR.'config.inc.php');
             'equal' => function ($a, $b) {
                 return $a == $b;
             },            
-            'not equal' => function ($a, $b) {
+            'not_equal' => function ($a, $b) {
                 return $a != $b;
             },
 			'contains' => function ($a, $b) {
@@ -15,7 +15,7 @@ require_once(__DIR__.DIRECTORY_SEPARATOR.'config.inc.php');
 				trigger_error(' Contains check ' .$a . $b .strpos($a,$b));
                 return strpos($a,$b) !== false;
             },
-			'not contains' => function ($a, $b) {
+			'not_contains' => function ($a, $b) {
 				$a=strtolower($a);
 				$b=strtolower($b);
 				trigger_error('Not Contains check ' .$a . $b .strpos($a,$b));
@@ -309,6 +309,7 @@ foreach($rulearr  as $nestedruleexpression)
 }
 */
 
+/*
 $ismatch=parseAndEvaluate($ruleexpression,$datajson);
 if($ismatch)
 {
@@ -316,6 +317,7 @@ if($ismatch)
 }else{
 	trigger_error('Rules Unmatched');
 }
+*/
 
 function parseAndEvaluate($ruleexpression,$data)
 {
@@ -404,7 +406,6 @@ function evaluateNestedRule($nestedexpression,$data)
 }
 
 
-     
 
 ?>
 

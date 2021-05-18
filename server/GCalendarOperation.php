@@ -12,7 +12,10 @@ putenv('GOOGLE_APPLICATION_CREDENTIALS='.__DIR__.'/gsuitecredentials.json');
 //checkUserExistGsuite('paolo@bytekmarketing.it');
 //connectGoogleClient();
 //setWatcher('appadurai@yaalidatrixproj.com','20fdedbf0-a845-11e3-1515e2-0800200c9a6689111');
-fetchEventsFromSyncToken('primary','CLD1k4zqpPACELD1k4zqpPACGAUgyv7jrwE=','appadurai@yaalidatrixproj.com'); //CLD1k4zqpPACELD1k4zqpPACGAUgyv7jrwE=
+//fetchEventsFromSyncToken('primary','CLD1k4zqpPACELD1k4zqpPACGAUgyv7jrwE=','appadurai@yaalidatrixproj.com'); //CLD1k4zqpPACELD1k4zqpPACGAUgyv7jrwE=
+
+//stopWatcher('appadurai@yaalidatrixproj.com','20fdedbf0-a845-11e3-1515e2-0800200c9a6689111');
+
 function connectGoogleClient()
 {
 
@@ -56,6 +59,37 @@ $events = $results->getItems();
 trigger_error('Events ' . json_encode($events));
 }
 
+
+
+function stopWatcher($useremail,$watcherid)
+{
+	try{
+
+		$client = new Google\Client();
+		$client->useApplicationDefaultCredentials();
+		$client->setApplicationName("Client_Library_Examples");
+		$client->setSubject($useremail);	
+		$client->setScopes(['https://www.googleapis.com/auth/calendar','https://www.googleapis.com/auth/calendar.events','https://www.googleapis.com/auth/admin.directory.user']);
+		$calendarService = new Google_Service_Calendar($client);
+		$channels = $calendarService->channels; //Google_Service_Calendar_Resource_Channels
+		$channel =  new Google_Service_Calendar_Channel($client);
+			$channel->setId($watcherid);
+			$channel->setType('web_hook');
+			$channel->setResourceId($useremail.'_primary');
+			$channel->setToken($useremail);
+			//$channel->setAddress('https://d40okpmrbb5wv.cloudfront.net/gsuitecalendar/NotificationReciever.php');
+		$optparams=array();
+		$stopresult=$channels->stop($channel,$optparams);
+		trigger_error('Google Calendar Channels for user ' . $stopresult);		
+		trigger_error('Google Calendar Channels for user ' . $channels);
+	}
+	catch(Exception $e)
+	{
+		trigger_error('Stop Watcher failed with message ' . $e->getMessage());
+		$result['status']='failure';
+		$result['error']=$e->getMessage();		
+	}	
+}
 
 function setWatcher($useremail,$watcherid)
 {
@@ -188,7 +222,7 @@ function doFullCalendarEventsSynch($useremail)
 	return $result;
 }
 
-function fetchEventsFromSyncToken($calendarId, $synctoken,$useremail)
+function fetchEventsFromSyncToken($calendarId, $synctoken,$useremail,$dbcalendarid)
 {
 	$response=array();
 	try
@@ -244,7 +278,10 @@ function fetchEventsFromSyncToken($calendarId, $synctoken,$useremail)
 				if($eventresult['status'] == 'success_withnodata')
 				{
 					// Add Event data into db
+					$theevent['calendarid']=$dbcalendarid;
 					addEvent($theevent);
+					$ruleresult=runRulesforEvent($theevent);
+					trigger_error('Matching Rules Array ' . json_encode($ruleresult));
 				}else if($eventresult['status'] == 'success')
 				{
 					//check for modified record and update

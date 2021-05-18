@@ -1,5 +1,6 @@
 <?php
 require_once(__DIR__.DIRECTORY_SEPARATOR.'DBUtility.php');
+require_once(__DIR__.DIRECTORY_SEPARATOR.'RuleProcessor.php');
 //strtotimecheck();
 
 function fetchEventFromGEventId($gid)
@@ -100,6 +101,8 @@ function addEvent($theevent)
 
 function checkModifiedEvent($gsuiteevent)
 {
+	$runrules=false;
+		
 	trigger_error('CheckModifiedEvent initiated for event ' . $gsuiteevent['id']);
 	try
 	{
@@ -107,7 +110,6 @@ function checkModifiedEvent($gsuiteevent)
 		$conn=getMysqlConnection();
 	
 		$modificationtext='';
-		$runrules=false;
 		$geventid=$gsuiteevent['id'];
 		$geventsummary=$gsuiteevent['summary'];
 		$geventdesc=$gsuiteevent['description'];
@@ -192,6 +194,54 @@ function checkModifiedEvent($gsuiteevent)
 	{
 		trigger_error('Exception occured while processing Event Modified ' . $e->getMessage());
 	}
+	return $runrules;
+}
+
+function runRulesForEvent($eventdata)
+{
+	$result=array("status"=>"success");
+	$matchingrules=array();
+	
+	$userdataarr=array();
+	$dbname=DBNAME;
+	$conn=getMysqlConnection();
+	try
+	{
+		$ruleconfigsql='select ruleid,rulename, criteria,priority,emails from ruleconfig';
+		mysqli_select_db($conn, $dbname);
+		$queryresult = mysqli_query($conn, $ruleconfigsql);
+		trigger_error('error:'.mysqli_error($conn));
+		$totalrows=mysqli_num_rows($queryresult);
+		trigger_error('Total Rows ' . $totalrows);
+		if($totalrows > 0)
+		{			
+			while ($fetchrow = mysqli_fetch_array($queryresult)) 
+			{	
+				$rulestr=$fetchrow['criteria'];
+				$ruleexpression=json_decode($rulestr,true);
+				$ruleid=$fetchrow['ruleid'];
+				$priority=$fetchrow['priority'];
+				$ismatch=parseAndEvaluate($ruleexpression,$eventdata);
+				if($ismatch)
+				{
+					array_push($matchingrules,$fetchrow);
+					trigger_error('Rules Matched for ruleid ' . $ruleid);
+				}else{
+					trigger_error('Rules Unmatched ' . $ruleid);
+				}
+				
+			}						
+			$result['data']=$matchingrules;
+
+		}else{
+			$result['data']=array();
+		}
+
+	}catch(Exception $e)
+	{
+		trigger_error('Unable to identify matching Rules for Event ' . $eventdata['id'] . ' due to error ' . $e->getMessage());
+	}
+	return $result;
 }
 
 function strtotimecheck()
