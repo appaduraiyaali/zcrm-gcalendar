@@ -78,8 +78,8 @@ $ruleconfigstr='{
   }
 }';
 //saveRule($ruleconfigstr);
-checkRuleNameExists('Sample Rule');
-
+//checkRuleNameExists('Sample Rule');
+fetchAllRules();
 function saveRule($ruleconfigstr)
 {
 	$ruleconfig=json_decode($ruleconfigstr,true);
@@ -148,5 +148,51 @@ function checkRuleNameExists($rulename)
 
 function fetchAllRules()
 {
+	$result=array();
+	try
+	{
+		$ruledataarr=array();
+		$dbname=DBNAME;
+		$conn=getMysqlConnection();
+		if($conn)
+		{
+			$allprofilequery="select ruleid,rulename,zprojectid,criteria,description,priority,emails from ruleconfig where isactive=true";
+			mysqli_select_db($conn, $dbname);
+			$queryresult = mysqli_query($conn, $allprofilequery);
+			trigger_error('error:'.mysqli_error($conn));
+			$totalrows=mysqli_num_rows($queryresult);
+			trigger_error('Total Rows ' . $totalrows);
+			if($totalrows > 0)
+			{
+				
+				while ($fetchrow = mysqli_fetch_array($queryresult)) 
+				{	
+					$ruledata=array();			
+					$ruledata['ruleid']=$fetchrow['ruleid'];
+					$ruledata['rulename']=$fetchrow['rulename'];
+					$ruledata['zprojectid']=$fetchrow['zprojectid'];
+					$ruledata['criteria']=$fetchrow['criteria'];
+					$ruledata['description']=$fetchrow['description'];
+					$ruledata['priority']=$fetchrow['priority'];
+					$ruledata['emails']=$fetchrow['emails'];
+					array_push($ruledataarr,$ruledata);
+				}						
+				$result['data']=$ruledataarr;
+				$result['status']='success';
 
+			}else{
+				$result['data']=array();
+				$result['status']='success';
+			}
+	}
+	closeConnection($conn);	
+
+	}catch(Exception $e)
+	{
+		trigger_error('Unable to fetch the rules list due to error ' . $e->getMessage());
+		$result["status"]='failure';
+		$result['reason']=$e->getMessage();
+	}
+	echo json_encode($result);
+	return json_encode($result);
 }

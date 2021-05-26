@@ -53,11 +53,12 @@
    define ('DATE_FORMAT', 'Y-m-d\TH:i:s\Z');
    define ('DEPLOYMENT', 'PRODUCTION');
    define('ZURL','https://www.zohoapis.com/crm/v2/');
-    define('DBNAME','zcrmgcalendar');
-   define('DBSERVER','localhost');
-   define('DBUSER','root');
-   define('DBPWD','');
-   define('SUBJECTEMAIL','appadurai@yaalidatrixproj.com');
+    define('DBNAME','zcrmgcalendar'); //iwbzkgcy_zohocalendar zcrmgcalendar
+   define('DBSERVER','localhost'); //hostingssd74.netsons.net
+   define('DBUSER','root');// root iwbzkgcy
+   define('DBPWD','');//ZohoBytek2021
+   define('SUBJECTEMAIL','appadurai@yaalidatrixproj.com');//''paolo@bytekmarketing.it);
+   define('PROJECTPORTAL','demo2bizappln');
   // define('ZURL','https://sandbox.zohoapis.com/crm/v2/');
 	define ('CONFIGFILE', 'C:\lacureconfig\application.config');
 	set_include_path(get_include_path() . PATH_SEPARATOR . '..');    
