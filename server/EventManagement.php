@@ -207,7 +207,7 @@ function runRulesForEvent($eventdata)
 	$conn=getMysqlConnection();
 	try
 	{
-		$ruleconfigsql='select ruleid,rulename, criteria,priority,emails from ruleconfig';
+		$ruleconfigsql='select ruleid,rulename, criteria,priority,emails,zprojectid from ruleconfig';
 		mysqli_select_db($conn, $dbname);
 		$queryresult = mysqli_query($conn, $ruleconfigsql);
 		trigger_error('error:'.mysqli_error($conn));

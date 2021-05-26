@@ -282,6 +282,12 @@ function fetchEventsFromSyncToken($calendarId, $synctoken,$useremail,$dbcalendar
 					addEvent($theevent);
 					$ruleresult=runRulesforEvent($theevent);
 					trigger_error('Matching Rules Array ' . json_encode($ruleresult));
+					$matchingrules=$ruleresult['data'];
+					if(count($matchingrules) > 0)
+					{
+						$thematchingrule=$matchingrules[0]; // TODO: Sort and get the highest priority matching rule
+						checkAndcreateZProjectTasks($theevent,$thematchingrule);
+					}
 				}else if($eventresult['status'] == 'success')
 				{
 					//check for modified record and update
