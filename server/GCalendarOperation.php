@@ -2,6 +2,7 @@
 //echo phpinfo();
 require_once(__DIR__.DIRECTORY_SEPARATOR.'config.inc.php');
 require_once(__DIR__.DIRECTORY_SEPARATOR.'EventManagement.php');
+require_once(__DIR__.DIRECTORY_SEPARATOR.'ZProjectIntegration.php');
 
 include_once __DIR__ . '/google-api-php-client--PHP8.0/vendor/autoload.php';
 
@@ -244,8 +245,8 @@ function fetchEventsFromSyncToken($calendarId, $synctoken,$useremail,$dbcalendar
 			if(empty($nextpage))
 			{
 				$nexteventsynctoken=$results->getNextSyncToken();
-				$result['status']='success';
-				$result['nexteventsynctoken']=$nexteventsynctoken;
+				$response['status']='success';
+				$response['nexteventsynctoken']=$nexteventsynctoken;
 			}
 			trigger_error('Event Next Sync Token ' . $results->getNextSyncToken( ));
 			trigger_error('Event Next Page ' . $nextpage);
@@ -305,6 +306,7 @@ function fetchEventsFromSyncToken($calendarId, $synctoken,$useremail,$dbcalendar
 		$response['status']='failure';
 		$response['reason']=$e->getMessage();
 	}
+	return $response;
 }
 
 

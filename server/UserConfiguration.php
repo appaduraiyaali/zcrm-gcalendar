@@ -1,8 +1,9 @@
 <?php
 require_once(__DIR__.DIRECTORY_SEPARATOR.'DBUtility.php');
 require_once(__DIR__.DIRECTORY_SEPARATOR.'GCalendarOperation.php');
+require_once(__DIR__.DIRECTORY_SEPARATOR.'CommonUtility.php');
 
-addUser('appadurai1@yaalidatrixproj.com');
+//addUser('appadurai@yaalidatrixproj.com');
 //fetchallusers();
 //removeUser('dummyuser@test.com');
 
@@ -37,34 +38,39 @@ function addUser($gsuiteemail)
 		return json_encode($result);
 	}
 
-	$conn=getMysqlConnection();
-	try{
-			$dbname=DBNAME;
-			$nexteventsynctoken='';
-			$userdataarr=array();
-			if($conn)
-			{
-				mysqli_select_db($conn, $dbname);
-				$guserid=$gcheckresult['guserid'];
-				$syncresult=doFullCalendarEventsSynch($gsuiteemail);
-				if($syncresult['status'] == 'success')
+		$conn=getMysqlConnection();
+		try{
+				$dbname=DBNAME;
+				$nexteventsynctoken='';
+				$userdataarr=array();
+				if($conn)
 				{
-					$nexteventsynctoken=$syncresult['nexteventsynctoken'];
-				}
-				$usersql = "INSERT INTO calendaruser (guserid, email,status)
-				VALUES ('$guserid', '$gsuiteemail', 'active')";
-				$queryresult =mysqli_query($conn, $usersql);
+					mysqli_select_db($conn, $dbname);
+					$guserid=$gcheckresult['guserid'];
+					$syncresult=doFullCalendarEventsSynch($gsuiteemail);
+					if($syncresult['status'] == 'success')
+					{
+						$nexteventsynctoken=$syncresult['nexteventsynctoken'];
+					}
+					$usersql = "INSERT INTO calendaruser (guserid, email,status)
+					VALUES ('$guserid', '$gsuiteemail', 'active')";
+					$queryresult =mysqli_query($conn, $usersql);
 
 				if ($queryresult === TRUE) {
 				  $last_id = $conn->insert_id;
+				  $result['status']='success';
+				  $result['message']='User successfully created with id ' .$last_id;
+				  $currentimemilli=(int)(microtime(true)*1000);
+				  $tokenexpiry=$currentimemilli+ (6*86400000) ; // after 6 days from now
+				  $channelid=random_strings();
 				  trigger_error( "New User record created successfully " .$last_id);
-				  $calendarsql= "INSERT INTO calendarconfig (gcalid, nextsynctoken,userid)
-							VALUES ('primary', '$nexteventsynctoken', $last_id)";
+				  $calendarsql= "INSERT INTO calendarconfig (gcalid, nextsynctoken,userid,tokenexpiry,channelid)
+							VALUES ('primary', '$nexteventsynctoken', $last_id,$tokenexpiry,'$channelid')";
 				  $queryresult = mysqli_query($conn, $calendarsql);
 				  if ($queryresult === TRUE) {
 					  $last_id = $conn->insert_id;
 					  trigger_error( "New Calendarconfig record created successfully " .$last_id);
-					  setWatcher($gsuiteemail,'20fdedbf0-a845-11e3-1515e2-0800200c9a6689111');
+					  setWatcher($gsuiteemail,$channelid);
 						} else {
 					  trigger_error( "Error: " . $calendarsql . "<br>" . mysqli_error($conn));
 					}		
@@ -164,7 +170,7 @@ function removeUser($useremail)
 			trigger_error('Total Rows ' . $totalrows);
 			if($totalrows > 0)
 			{			
-				$delsql="delete from calendaruser set email='".$useremail."'";
+				$delsql="delete from calendaruser set email='".$useremail."'"; //TODO: Remove all associated Events and other dependencies
 
 
 			}else{

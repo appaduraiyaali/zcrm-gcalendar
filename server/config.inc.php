@@ -59,6 +59,11 @@
    define('DBPWD','');//ZohoBytek2021
    define('SUBJECTEMAIL','appadurai@yaalidatrixproj.com');//''paolo@bytekmarketing.it);
    define('PROJECTPORTAL','demo2bizappln');
+   define('REFRESH_TOKEN',"1000.9070ecccc0385ee729fb25cccd568b30.04ae2e29d1a12c3609ed838608370f27");
+   define('CLIENT_ID', "1000.7D1I5R0FUQXMDOCZLXWDZUP4V6ZTHI");
+   define('CLIENT_SECRET', "67c3871c3efd04cb35781cf25d31643a409e3dc10f");
+
+
   // define('ZURL','https://sandbox.zohoapis.com/crm/v2/');
 	define ('CONFIGFILE', 'C:\lacureconfig\application.config');
 	set_include_path(get_include_path() . PATH_SEPARATOR . '..');    

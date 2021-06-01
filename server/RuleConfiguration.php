@@ -1,85 +1,9 @@
 <?php
 require_once(__DIR__.DIRECTORY_SEPARATOR.'DBUtility.php');
-$ruleconfigstr='{
-  "rulename": "Sample Rule",
-  "projectid": "1111",
-  "priority": "1",
-  "description": "Sample Description for this rule..",
-  "emails":"appadurai@bizappln.com",
-  "ruledata": {
-    "condition": "AND",
-    "rules": [
-      {
-        "id": "description",
-        "field": "description",
-        "type": "string",
-        "input": "text",
-        "operator": "contains",
-        "value": "Demo"
-      },
-      {
-        "id": "email",
-        "field": "email",
-        "type": "string",
-        "input": "text",
-        "operator": "equal",
-        "value": "jhon@test.com"
-      },
-      {
-        "condition": "OR",
-        "rules": [
-          {
-            "condition": "OR",
-            "rules": [
-              {
-                "id": "summary",
-                "field": "summary",
-                "type": "string",
-                "input": "text",
-                "operator": "contains",
-                "value": "Meeting"
-              },
-              {
-                "id": "email",
-                "field": "email",
-                "type": "string",
-                "input": "text",
-                "operator": "contains",
-                "value": "zylker"
-              }
-            ]
-          },
-          {
-            "condition": "AND",
-            "rules": [
-              {
-                "id": "description",
-                "field": "description",
-                "type": "string",
-                "input": "text",
-                "operator": "not_contains",
-                "value": "google"
-              },
-              {
-                "id": "summary",
-                "field": "summary",
-                "type": "string",
-                "input": "text",
-                "operator": "equal",
-                "value": "Demo Meeting"
-              }
-            ]
-          }
-        ]
-      }
-    ],
-	
-    "valid": true
-  }
-}';
+
 //saveRule($ruleconfigstr);
 //checkRuleNameExists('Sample Rule');
-fetchAllRules();
+//fetchAllRules();
 function saveRule($ruleconfigstr)
 {
 	$ruleconfig=json_decode($ruleconfigstr,true);

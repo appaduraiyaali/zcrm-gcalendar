@@ -142,13 +142,13 @@ $samplerule=array('ruleid'=>1,'rulename'=>'Sample Rule','zprojectid'=>'160050000
 
 //createZProjectTask($datastr,'appadurai@bizappln.com',$samplerule);
 
-checkAndcreateZProjectTasks(json_decode($datastr,true),$samplerule);
+//checkAndcreateZProjectTasks(json_decode($datastr,true),$samplerule);
 
 function getAccessToken($reFresh_token)
 {
 
-	$client_id= "1000.7D1I5R0FUQXMDOCZLXWDZUP4V6ZTHI";
-	$client_secret= "67c3871c3efd04cb35781cf25d31643a409e3dc10f";
+	$client_id=CLIENT_ID;
+	$client_secret= CLIENT_SECRET;
 	$access_url = "https://accounts.zoho.com/oauth/v2/token?refresh_token=".$reFresh_token."&client_id=".$client_id."&client_secret=".$client_secret."&grant_type=refresh_token";
 
 	$access_curl = curl_init();
@@ -184,7 +184,7 @@ function fetchZohoProjects()
 {
 	$result=array();
 	try{
-		$reFresh_token= "1000.9070ecccc0385ee729fb25cccd568b30.04ae2e29d1a12c3609ed838608370f27";
+		$reFresh_token= REFRESH_TOKEN;
 	
 			$accesstoken=getAccessToken($reFresh_token);
 			$request_url = 'https://projectsapi.zoho.com/restapi/portal/'.PROJECTPORTAL.'/projects/';

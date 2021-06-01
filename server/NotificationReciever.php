@@ -36,6 +36,24 @@ function handleNotification($headers)
 		$dbcalendarid=$fetchrow['calendarid'];
 		trigger_error('Fetch Events from synctoken ' . $nextsynctoken . ' for '. $email);
 		$eventresult=fetchEventsFromSyncToken($gcalid,$nextsynctoken,$email,$dbcalendarid);
+		updateNextSyncToken($dbcalendarid,$eventresult['nexteventsynctoken']);
+
+	}catch(Exception $e)
+	{
+		trigger_error('Notification handling failed for resource ' . $channelid);
+	}
+}
+
+function updateNextSyncToken($dbcalendarid,$nexttoken)
+{
+	try{
+		$conn=getMysqlConnection();
+		$dbname=DBNAME;
+		mysqli_select_db($conn, $dbname);
+		$updatetokensql="update calendarconfig set nextsynctoken='$nexttoken' where calendarid=$dbcalendarid";
+		$queryresult = mysqli_query($conn, $updatetokensql);
+		trigger_error('mysql query result and error:' . $queryresult .mysqli_error($conn));
+		
 
 	}catch(Exception $e)
 	{
