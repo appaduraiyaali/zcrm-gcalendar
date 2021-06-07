@@ -140,6 +140,12 @@ $datastr='{
 $samplerule=array('ruleid'=>1,'rulename'=>'Sample Rule','zprojectid'=>'1600500000001081005','criteria'=>'{"condition":"OR","rules":[{"id":"description","field":"description","type":"string","input":"text","operator":"contains","value":"Demo"},{"id":"email","field":"email","type":"string","input":"text","operator":"equal","value":"jhon@test.com"},{"condition":"OR","rules":[{"condition":"OR","rules":[{"id":"summary","field":"summary","type":"string","input":"text","operator":"contains","value":"Meeting"},{"id":"email","field":"email","type":"string","input":"text","operator":"contains","value":"zylker"}]},{"condition":"OR","rules":[{"id":"description","field":"description","type":"string","input":"text","operator":"not_contains","value":"google"},{"id":"summary","field":"summary","type":"string","input":"text","operator":"equal","value":"Demo Meeting"}]}]}],"valid":true}','priority'=>'1','emails'=>'appadurai@bizappln.com');
 //fetchZohoProjects();
 
+if($_GET['method']=="fetchprojects"){
+	//echo "Projects New Test Data..";
+	$projectsdata = fetchZohoProjects();
+	print_r($projectsdata);
+}
+
 //createZProjectTask($datastr,'appadurai@bizappln.com',$samplerule);
 
 //checkAndcreateZProjectTasks(json_decode($datastr,true),$samplerule);
@@ -201,7 +207,7 @@ function fetchZohoProjects()
 			 'status' => 'active'
 			 );
 			// $request_url .= '?' . http_build_query($request_parameters);
-			 echo $request_url;
+			 //echo $request_url;
 			 
 		 curl_setopt($downch, CURLOPT_URL, $request_url);
     curl_setopt($downch, CURLOPT_HTTPHEADER, $headers);
@@ -217,26 +223,31 @@ function fetchZohoProjects()
 		 $projectsjson=json_decode($response,true);
 
 		 $projectdetails=$projectsjson['projects'];
+		 $projectslist = Array();
 		 foreach($projectdetails as $theproject)
 			{
 				 trigger_error("Project Name and Id " . $theproject['name'] . $theproject['id_string']);
 				 $projectname=$theproject['name'] ;
 				 $projectid=$theproject['id_string'];
 				 $result[$projectid]=$projectname;
+				 $projectdata = Array();
+				 $projectdata['projectid']=$projectid;
+				 $projectdata['projectname']=$projectname;
+				array_push($projectslist, $projectdata);
 			}
 		 $response_info = curl_getinfo($downch);
 		 curl_close($downch);
 		 $response_body = substr($response, $response_info['header_size']);
-		 echo "Response HTTP Status Code : ";
-		 echo $response_info['http_code'];
-		  echo "\n";
-		 echo "Response Body : ";
-		 echo $response;
+		 //echo "Response HTTP Status Code : ";
+		 //echo $response_info['http_code'];
+		  //echo "\n";
+		 //echo "Response Body : ";
+		 //echo $response;
 	}catch(Exception $e)
 	{
 		trigger_error('Unable to fetch Zoho Projects ' . $e->getMessage());
 	}
-	return json_encode($result);
+	return json_encode($projectslist);
 }
 
 function checkAndcreateZProjectTasks($event,$matchedrule)

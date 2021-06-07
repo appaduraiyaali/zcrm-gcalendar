@@ -6,6 +6,30 @@ var rules_basic = {
     value: 10.25
   }]
 };
+function IsJsonString(data) {
+	try {
+		JSON.parse(data);
+	} catch (e) {
+		return false;
+	}
+	return true;
+}
+$.get("/gsuitecalendar/ZProjectIntegration.php?method=fetchprojects",
+	function(data) {
+		if(IsJsonString(data)){
+			var responsedata = JSON.parse(data);
+			console.log("projectdata..");
+			console.log(responsedata);
+			$.each(responsedata, function(key, value) {   
+				 $('#projectid')
+					 .append($("<option></option>")
+								.attr("value", value['projectid'])
+								.text(value['projectname'])); 
+			});
+		}
+	}
+);
+
 $('#builder-basic').queryBuilder({
   
   filters: [{
@@ -41,33 +65,53 @@ $('#btn-set').on('click', function() {
 $('#btn-get').on('click', function() {
   var result = $('#builder-basic').queryBuilder('getRules');
   var requestdata = {};
+ 
   requestdata.rulename = $("#rulename").val();
   requestdata.projectid = $("#projectid").val();
   requestdata.priority = $("#priority").val();
   requestdata.description = $("#description").val();
-  if (!$.isEmptyObject(result)) {
-      requestdata.rulesdata = result;
-      
-      requeststring = JSON.stringify(requestdata, null, 2);
+  requestdata.emails="appadurai@bizappln.com";
+  if (!$.isEmptyObject(result)&&$("#rulename").val()!=""&&$("#description").val()!="") {
+    requestdata.ruledata = result;
+    requeststring = JSON.stringify(requestdata, null, 2);
     console.log("Complete Requestdata..");
     console.log(requestdata);
     console.log("Complete Requestdata in string..");
     console.log(requeststring);
-    /*$.ajax({
+    $.ajax({
         contentType: 'application/json',
         data: requeststring,
         dataType: 'json',
         success: function(response) {
             console.log("response");
             console.log(response);
+			alert("Watcher Rule Created Successfully..");
+			window.location = "/gsuitecalendar/rules-management-client-files/dashboard.html";
+
         },
         error: function(reason){
             console.log("Failed..");
             console.log(reason);
+			alert("Watcher Rule Created Successfully..");
+			window.location = "/gsuitecalendar/rules-management-client-files/dashboard.html";
+
         },
         processData: false,
         type: 'POST',
-        url: 'https://crmprojects.bizappln.com/gcal-integration/gcalserver/rar-files-sent-locally/server/RuleProcessor.php'
-    });*/
+        url: '/gsuitecalendar/createrule.php'
+    });
   }
+
+
+
+
+
+
+
+
+
+
+
+
+
 });

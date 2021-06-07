@@ -155,23 +155,33 @@ function fetchAllUsers()
 function removeUser($useremail)
 {
 
-	$result=array("status"=>"success");
+	$result=array("status"=>"");
 	try{
 			$dbname=DBNAME;
 		$userdataarr=array();
 		$conn=getMysqlConnection();
 		if($conn)
 		{
+			
 			$allprofilequery="select userid,email from calendaruser  where email='".$useremail."'";
 			mysqli_select_db($conn, $dbname);
 			$queryresult = mysqli_query($conn, $allprofilequery);
 			trigger_error('error:'.mysqli_error($conn));
 			$totalrows=mysqli_num_rows($queryresult);
+			$result['totalrows']=mysqli_error($queryresult);
 			trigger_error('Total Rows ' . $totalrows);
 			if($totalrows > 0)
 			{			
-				$delsql="delete from calendaruser set email='".$useremail."'"; //TODO: Remove all associated Events and other dependencies
-
+				$delsql="delete from calendaruser where email='".$useremail."'";
+				$delsql="delete from calendaruser where userid='".$useremail."'"; 				//TODO: Remove all associated Events and other dependencies
+				$deletequeryresult = mysqli_query($conn, $delsql);
+				trigger_error('error:'.mysqli_error($conn));
+				$result['error']=mysqli_error($conn);
+				$totaldeletequeryresultrows=mysqli_num_rows($deletequeryresult);
+				$result['rows']=mysqli_error($totaldeletequeryresultrows);
+				trigger_error('Total Rows ' . $totaldeletequeryresultrows);
+				
+			$result['status']='success';
 
 			}else{
 				$result['status']='failure';

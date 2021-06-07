@@ -7,6 +7,9 @@
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
   <link rel="stylesheet" href="jQuery-QueryBuilder-master/dist/css/query-builder.default.min.css">
   <script src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
+  
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular.min.js"></script>
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/dot/1.1.3/doT.min.js" integrity="sha512-mv9iHAP8cyGYB1TX54qMIFYFbHpFoqo1StdcuIUoAxTXIiFfOu22TjJGrFMpY+iR4QmGkElLlHBVx5C+PiIdvg==" crossorigin="anonymous"></script>
@@ -16,111 +19,44 @@
 </head>
 <body>
 
-<div class="container">
+<div ng-app="rulesapp" ng-controller="rulesctrl" class="container">
   <h2>Rules List</h2> 
   
 <a href="creationpage.html" class="btn btn-primary pull-right"><span class="glyphicon glyphicon-plus"></span>  Create Rule</a> 
 <a href="userslist.html" class="btn btn-primary pull-right" style="margin-right:10px;margin-bottom:20px;"><span class="glyphicon glyphicon-th-list"></span>  Users List</a> 
-  <table class="table table-bordered table-hover">
-    <thead>
-      <tr>
-        <th>Rule ID</th>
-        <th>Rule Name</th>
-        <th>Priority</th>
-        <th>Project Name</th>
-        <th>Status</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>Rule_1</td>
-        <td>Sample Rule for Testing</td>
-        <td>1</td>
-        <td>No project</td>
-        <td><span class="label label-success">Active</span></td>
-        <td>
-			<div class="dropdown">
-				<button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown">Actions
-				<span class="caret"></span></button>
-				<ul class="dropdown-menu">
-				  <li><a data-toggle="modal" data-target="#criteriamodal">View/Edit</a></li>
-				  <li class="divider"></li>
-				  <li><a href="#">Disable</a></li>
-				  <li><a href="#">Delete</a></li>
-				</ul>
-			</div>
-		</td>
-      </tr>
-
-
-      <tr>
-        <td>Rule_4</td>
-        <td>Sample Rule for Testing2</td>
-        <td>1</td>
-        <td>No project</td>
-        <td><span class="label label-success">Active</span></td>
-        <td>
-			<div class="dropdown">
-				<button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown">Actions
-				<span class="caret"></span></button>
-				<ul class="dropdown-menu">
-				  <li><a data-toggle="modal" data-target="#criteriamodal">View/Edit</a></li>
-				  <li class="divider"></li>
-				  <li><a href="#">Disable</a></li>
-				  <li><a href="#">Delete</a></li>
-				</ul>
-			</div>
-		</td>
-      </tr>
-	  
-	  
-	  
-      <tr>
-        <td>Rule_2</td>
-        <td>Sample Rule for Testing3</td>
-        <td>1</td>
-        <td>No project</td>
-        <td><span class="label label-danger">Disabled</span></td>
-        <td>
-			<div class="dropdown">
-				<button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown">Actions
-				<span class="caret"></span></button>
-				<ul class="dropdown-menu">
-				  <li><a data-toggle="modal" data-target="#criteriamodal">View/Edit</a></li>
-				  <li class="divider"></li>
-				  <li><a href="#">Disable</a></li>
-				  <li><a href="#">Delete</a></li>
-				</ul>
-			</div>
-		</td>
-      </tr>
-	  
-	  
-	  
-      <tr>
-        <td>Rule_3</td>
-        <td>Sample Rule for Testing4</td>
-        <td>1</td>
-        <td>Temporary project</td>
-        <td><span class="label label-success">Active</span></td>
-        <td>
-			<div class="dropdown">
-				<button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown">Actions
-				<span class="caret"></span></button>
-				<ul class="dropdown-menu">
-				  <li><a data-toggle="modal" data-target="#criteriamodal">View/Edit</a></li>
-				  <li class="divider"></li>
-				  <li><a href="#">Disable</a></li>
-				  <li><a href="#">Delete</a></li>
-				</ul>
-			</div>
-		</td>
-      </tr>
-
-	  
-	  </tbody>
-  </table>
+	<table class="table table-bordered table-hover">
+		<thead>
+			<tr>
+				<th>Rule ID</th>
+				<th>Rule Name</th>
+				<th>Priority</th>
+				<th>Project Name</th>
+				<th>Status</th>
+				<th></th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr ng-repeat="rule in rulesdata.data">
+				<td>{{rule.ruleid}}</td>
+				<td>{{rule.rulename}}</td>
+				<td>{{rule.priority}}</td>
+				<td>{{rule.zprojectid}}</td>
+				<td><span class="label label-success">Active</span></td>
+				<td>
+					<div class="dropdown">
+						<button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown">Actions
+						<span class="caret"></span></button>
+						<ul class="dropdown-menu">
+							<!-- <li><a data-toggle="modal" data-target="#criteriamodal">View Rule</a></li> -->
+							<li><a href="#" ng-click="viewrule($index)">View Rule</a></li> 
+							<li class="divider"></li>
+							<li><a href="#" ng-click="deleterule(rule.ruleid)">Delete Rule</a></li>
+						</ul>
+					</div>
+				</td>
+			</tr>
+		</tbody>
+	</table>
 
 
  <!-- Modal -->
@@ -133,7 +69,7 @@
           <button type="button" class="close" data-dismiss="modal">&times;</button>
           <h4 class="modal-title">Rule Details</h4>
         </div>
-        <div class="modal-body">
+        <div class="modal-body" style="pointer-events: none;">
           <div class="container" style="width:850px;">
 
 	<div class="panel panel-default">
@@ -141,7 +77,7 @@
 			<div class="form-group">
 			  <label class="control-label col-sm-1" for="rulename">Rule Name:</label>
 			  <div class="col-sm-11">
-				<input type="text" class="form-control" id="rulename" placeholder="Enter any unique name for this Rule.." name="rulename" value="Test Rule">
+				<input type="text" class="form-control" disabled id="rulename" placeholder="Enter any unique name for this Rule.." name="rulename" value="Test Rule">
 			  </div>
 			</div>
 		</div>
@@ -161,14 +97,9 @@
 	<div class="panel panel-default">
 		<div class="panel-body form-horizontal">
 			<div class="form-group">
-				<label class="control-label col-sm-1" for="projectname">Project Name:</label>
+				<label class="control-label col-sm-1" for="projectname">Project ID:</label>
 				<div class="col-sm-11">
-					<select class="form-control" id="projectname">
-						<option>Project 1</option>
-						<option selected>Project 2</option>
-						<option>Project 3</option>
-						<option>Project 4</option>
-					</select>
+					<input type="text" class="form-control" disabled id="projectname"/>
 				</div>
 			</div>
 		</div>
@@ -176,9 +107,9 @@
 	<div class="panel panel-default">
 		<div class="panel-body form-horizontal">
 			<div class="form-group">
-				<label class="control-label col-sm-1" for="projectname">Priority:</label>
+				<label class="control-label col-sm-1" for="priority">Priority:</label>
 				<div class="col-sm-11">
-					<select class="form-control" id="projectname">
+					<select class="form-control" disabled id="priority">
 						<option>1</option>
 						<option>2</option>
 						<option>3</option>
@@ -193,7 +124,7 @@
 			<div class="form-group">
 				<label class="control-label col-sm-1" for="description">Description:</label>
 				<div class="col-sm-11">
-					<textarea class="form-control" rows="5" id="description">Hello Test..</textarea>
+					<textarea class="form-control" rows="5" disabled id="description">Hello Test..</textarea>
 				</div>
 			</div>
 		</div>
@@ -201,9 +132,6 @@
 	
 </div>
 
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-default" data-dismiss="modal">Save Changes</button>
         </div>
       </div>
       

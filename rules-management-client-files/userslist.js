@@ -2,7 +2,15 @@ var app = angular.module('usersapp', []);
 
 app.controller('userlistctrl', function($scope, $http, $window) {
 
-$.get("../server/usersendpoint.php?method=fetchuser",
+function IsJsonString(data) {
+	try {
+		JSON.parse(data);
+	} catch (e) {
+		return false;
+	}
+	return true;
+}
+$.get("/gsuitecalendar/usersendpoint.php?method=fetchuser",
 	function(data) {
 		var responsedata = JSON.parse(data);
 		$scope.usersdata = responsedata.data;
@@ -17,27 +25,33 @@ $scope.adduser=function(email){
 		alert("Enter the Valid Email Address..");
 	}
 	else{
-		$.get("../server/usersendpoint.php?method=adduser&useremail="+email,
+		$.get("/gsuitecalendar/usersendpoint.php?method=adduser&useremail="+email,
 			function(data) {
 				if(data==''){
 					console.log("Data is Empty now..");
 					alert("Provided Email address not exist in GSuite..");
 				}
 				else{
-				var addrequestdata = JSON.parse(data);
-				console.log("addrequestdata"); 
-				console.log(addrequestdata);
+				
+				
+				if(IsJsonString(data)){
+					var addrequestdata = JSON.parse(data);
+					console.log("addrequestdata"); 
+					console.log(addrequestdata);
 					if(addrequestdata.status=="failure"&&addrequestdata.reason.includes("already exist")){
 						alert(addrequestdata.reason);
 					}
 					if(addrequestdata.status=="failure"&&!addrequestdata.reason.includes("already exist")){
 						alert("User Email not available in GSuite..");
 					}
-					if(addrequestdata.status=="success"){
-						alert("User Email Added Successfully..");
+				}
+				else{
+					alert("User Email Added Successfully..");
 						$('#usersmodal').modal('toggle');
 						$window.location.reload();
-					}
+				}
+				
+				
 				}
 			}
 		);
@@ -46,11 +60,11 @@ $scope.adduser=function(email){
 
 $scope.removeuser=function(email){
 	console.log(email);
-	$.get("../server/usersendpoint.php?method=removeuser&useremail="+email,
+	$.get("/gsuitecalendar/usersendpoint.php?method=removeuser&useremail="+email,
 		function(data) {
-			var removeuserrequestdata = JSON.parse(data);
-			console.log("removeuserrequestdata"); 
-			console.log(removeuserrequestdata);
+			//var removeuserrequestdata = JSON.parse(data);
+			alert("User has been Removed..");
+			$window.location.reload();
 		}
 	);
 }
