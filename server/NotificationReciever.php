@@ -22,6 +22,10 @@ function handleNotification($headers)
 	$token=$headers['X-Goog-Channel-Token'];
 	$resourceid=$headers['X-Goog-Resource-Id'];
 	try{
+		if($state == 'sync') // this is received the first time when Watcher is created, so ignore this notification from gsuite
+		{
+			return;
+		}
 		$conn=getMysqlConnection();
 		$dbname=DBNAME;
 		mysqli_select_db($conn, $dbname);
@@ -52,6 +56,7 @@ function updateNextSyncToken($dbcalendarid,$nexttoken)
 		mysqli_select_db($conn, $dbname);
 		$updatetokensql="update calendarconfig set nextsynctoken='$nexttoken' where calendarid=$dbcalendarid";
 		$queryresult = mysqli_query($conn, $updatetokensql);
+		if(!$queryresult)
 		trigger_error('mysql query result and error:' . $queryresult .mysqli_error($conn));
 		
 

@@ -60,7 +60,10 @@ $events = $results->getItems();
 trigger_error('Events ' . json_encode($events));
 }
 
+function channels()
+{
 
+}
 
 function stopWatcher($useremail,$watcherid)
 {
@@ -73,16 +76,17 @@ function stopWatcher($useremail,$watcherid)
 		$client->setScopes(['https://www.googleapis.com/auth/calendar','https://www.googleapis.com/auth/calendar.events','https://www.googleapis.com/auth/admin.directory.user']);
 		$calendarService = new Google_Service_Calendar($client);
 		$channels = $calendarService->channels; //Google_Service_Calendar_Resource_Channels
+		trigger_error('Google Calendar Channels for user ' . $channels);
 		$channel =  new Google_Service_Calendar_Channel($client);
 			$channel->setId($watcherid);
 			$channel->setType('web_hook');
-			$channel->setResourceId($useremail.'_primary');
+			$channel->setResourceId('I305hkUAIzQQuG5W4GEYzg86HN4');
 			$channel->setToken($useremail);
 			//$channel->setAddress('https://d40okpmrbb5wv.cloudfront.net/gsuitecalendar/NotificationReciever.php');
 		$optparams=array();
 		$stopresult=$channels->stop($channel,$optparams);
 		trigger_error('Google Calendar Channels for user ' . $stopresult);		
-		trigger_error('Google Calendar Channels for user ' . $channels);
+		
 	}
 	catch(Exception $e)
 	{
@@ -287,16 +291,23 @@ function fetchEventsFromSyncToken($calendarId, $synctoken,$useremail,$dbcalendar
 					if(count($matchingrules) > 0)
 					{
 						$thematchingrule=$matchingrules[0]; // TODO: Sort and get the highest priority matching rule
-						checkAndcreateZProjectTasks($theevent,$thematchingrule);
+						createorUpdateZProjectTasks($theevent,$thematchingrule);
 					}
 				}else if($eventresult['status'] == 'success')
 				{
-					//check for modified record and update
-					checkModifiedEvent($theevent);
+					$ruleresult=runRulesforEvent($theevent);
+					trigger_error('Matching Rules Array ' . json_encode($ruleresult));
+					$matchingrules=$ruleresult['data'];
+					if(count($matchingrules) > 0)
+					{
+						$thematchingrule=$matchingrules[0]; // TODO: Sort and get the highest priority matching rule
+						createorUpdateZProjectTasks($theevent,$thematchingrule);
+					}					
+
+					//checkModifiedEvent($theevent);
 				}else{
 					trigger_error('Something wrong happend while fetching event details for $geventid ' . json_encode($eventresult));
 				}
-
 			}
 		
 	}catch(Exception $e)
