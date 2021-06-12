@@ -54,14 +54,18 @@
    define ('DEPLOYMENT', 'PRODUCTION');
    define('ZURL','https://www.zohoapis.com/crm/v2/');
     define('DBNAME','zcrmgcalendar'); //iwbzkgcy_zohocalendar zcrmgcalendar
-   define('DBSERVER','localhost'); //hostingssd74.netsons.net
-   define('DBUSER','root');// root iwbzkgcy
-   define('DBPWD','');//ZohoBytek2021
-   define('SUBJECTEMAIL','appadurai@yaalidatrixproj.com');//''paolo@bytekmarketing.it);
+   define('DBSERVER','localhost'); //hostingssd74.netsons.net 'ls-8152237294e346a897a605a661c22defef916438.c29cwtszkczm.us-east-1.rds.amazonaws.com'
+   define('DBUSER','root');// root iwbzkgcy 'dbmasteruser'
+   define('DBPWD','');//'' ZohoBytek2021 'Yaa!!2016'
+   define('SUBJECTEMAIL','appadurai@yaalidatrixproj.com');//'paolo@bytekmarketing.it');
    define('PROJECTPORTAL','demo2bizappln');
-   define('REFRESH_TOKEN',"1000.9070ecccc0385ee729fb25cccd568b30.04ae2e29d1a12c3609ed838608370f27");
-   define('CLIENT_ID', "1000.7D1I5R0FUQXMDOCZLXWDZUP4V6ZTHI");
-   define('CLIENT_SECRET', "67c3871c3efd04cb35781cf25d31643a409e3dc10f");
+   define('REFRESH_TOKEN',"1000.2939b1b4f5eb03960d3fee1b8767f930.1bd7460e1e65f5211a3840367df86790");
+   define('CLIENT_ID', "1000.QEPC4FW5TM2JI9T4VS009JGWOYAG7Y");
+   define('CLIENT_SECRET', "4dcf0768c64d1486190dc59131a0c88978c5eb3726");
+   define('COMMON_TASKLIST_NAME','Gsuite Calendar Task Group');
+   define('UNMATCHEDRULEPROJECT','1600500000001484009');
+   define('UNMATCHEDTASKLISTID','1600500000001484027');
+   define('DOMAIN','yaalidatrixproj.com');
 
 
   // define('ZURL','https://sandbox.zohoapis.com/crm/v2/');
