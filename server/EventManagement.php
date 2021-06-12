@@ -21,7 +21,7 @@ function fetchEventFromGEventId($gid)
 				trigger_error('error:'.mysqli_error($conn));
 			}
 			$totalrows=mysqli_num_rows($queryresult);
-			trigger_error('Events Fetched: Total Rows ' . $totalrows);
+			trigger_error('Events Fetched : Total Rows ' . $totalrows);
 			if($totalrows > 0)
 			{				
 				while ($fetchrow = mysqli_fetch_array($queryresult)) 
@@ -53,6 +53,7 @@ function fetchEventFromGEventId($gid)
 function addEvent($theevent)
 {
 	try{
+			trigger_error('DBEvent Addition invoked for ' . $theevent['id']);
 			$dbname=DBNAME;
 			$conn=getMysqlConnection();
 			mysqli_select_db($conn, $dbname);
@@ -92,6 +93,8 @@ function addEvent($theevent)
 							trigger_error(' Insert attendee failed due to error:'.mysqli_error($conn));
 						}
 					}
+				}else{
+					trigger_error(' DBEvent Addition failed due to error:'.mysqli_error($conn));
 				}
 	}catch(Exception $e)
 	{

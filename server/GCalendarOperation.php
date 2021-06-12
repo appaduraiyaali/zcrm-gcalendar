@@ -65,8 +65,9 @@ function channels()
 
 }
 
-function stopWatcher($useremail,$watcherid)
+function stopWatcher($useremail,$watcherid,$resourceid)
 {
+	$stopresult=null;
 	try{
 
 		$client = new Google\Client();
@@ -80,7 +81,7 @@ function stopWatcher($useremail,$watcherid)
 		$channel =  new Google_Service_Calendar_Channel($client);
 			$channel->setId($watcherid);
 			$channel->setType('web_hook');
-			$channel->setResourceId('I305hkUAIzQQuG5W4GEYzg86HN4');
+			$channel->setResourceId($resourceid);
 			$channel->setToken($useremail);
 			//$channel->setAddress('https://d40okpmrbb5wv.cloudfront.net/gsuitecalendar/NotificationReciever.php');
 		$optparams=array();
@@ -90,10 +91,11 @@ function stopWatcher($useremail,$watcherid)
 	}
 	catch(Exception $e)
 	{
-		trigger_error('Stop Watcher failed with message ' . $e->getMessage());
+		trigger_error('Stop Watcher failed with message ' . $e . $e->getMessage());
 		$result['status']='failure';
 		$result['error']=$e->getMessage();		
-	}	
+	}
+	return $stopresult;
 }
 
 function setWatcher($useremail,$watcherid)
@@ -118,8 +120,8 @@ function setWatcher($useremail,$watcherid)
 		$calendarlist=$service->calendarList->listCalendarList(); // Google_Service_Calendar_CalendarList
 		trigger_error('Calendar List ' . json_encode($calendarlist->items));
 		
-		$watchEvent = $service->events->watch('primary', $channel);
-		trigger_error('Watch Response ' . json_encode($watchEvent));
+		$result = $service->events->watch('primary', $channel);
+		trigger_error('Watch Response ' . json_encode($result));
 	}catch(Exception $e)
 	{
 		trigger_error($e->getMessage());
@@ -127,6 +129,7 @@ function setWatcher($useremail,$watcherid)
 		$result['error']=$e->getMessage();
 		
 	}
+	return $result;
 }
 
 
@@ -141,10 +144,22 @@ function checkUserExistGsuite($useremail)
 	$client->setScopes(['https://www.googleapis.com/auth/calendar','https://www.googleapis.com/auth/calendar.events','https://www.googleapis.com/auth/admin.directory.user']);	
 	//$client->fetchAccessTokenWithAssertion();
 	$service= new Google_Service_Directory($client);
-	$users = $service->users;
-	trigger_error('Users ' . $users);
+	$users = $service->users; //Google_Service_Directory_Resource_Users
+	$optParams = array(
+		'domain' => DOMAIN
+	);
+	$userresult=$users->listUsers($optParams); //Google_Service_Directory_Users
+	$userslist = $userresult->getUsers();
+	trigger_error('User Result from Gsuite ' . $userslist);
+	foreach($userslist as $user)
+	{
+		trigger_error('Users in gsuite ' . $user->getPrimaryEmail());
+	}
+	
 	$temp=array();
 	try{
+
+		
 
 		$userinfo=$users->get($useremail,$temp); //Google_Service_Directory_User
 		$gsuiteid=$userinfo->getCustomerId();
@@ -288,22 +303,32 @@ function fetchEventsFromSyncToken($calendarId, $synctoken,$useremail,$dbcalendar
 					$ruleresult=runRulesforEvent($theevent);
 					trigger_error('Matching Rules Array ' . json_encode($ruleresult));
 					$matchingrules=$ruleresult['data'];
+					$inputparams=null;
 					if(count($matchingrules) > 0)
 					{
 						$thematchingrule=$matchingrules[0]; // TODO: Sort and get the highest priority matching rule
-						createorUpdateZProjectTasks($theevent,$thematchingrule);
+						$inputparams=array('zprojectid'=>$thematchingrule['zprojectid']);
+						
+					}else{
+						$inputparams=array('zprojectid'=>UNMATCHEDRULEPROJECT);
 					}
+					createorUpdateZProjectTasks($theevent,$inputparams);
 				}else if($eventresult['status'] == 'success')
 				{
 					$ruleresult=runRulesforEvent($theevent);
 					trigger_error('Matching Rules Array ' . json_encode($ruleresult));
 					$matchingrules=$ruleresult['data'];
+										$inputparams=null;
 					if(count($matchingrules) > 0)
 					{
 						$thematchingrule=$matchingrules[0]; // TODO: Sort and get the highest priority matching rule
-						createorUpdateZProjectTasks($theevent,$thematchingrule);
-					}					
+						$inputparams=array('zprojectid'=>$thematchingrule['zprojectid']);
+						
+					}else{
+						$inputparams=array('zprojectid'=>UNMATCHEDRULEPROJECT);
 
+					}
+					createorUpdateZProjectTasks($theevent,$inputparams);
 					//checkModifiedEvent($theevent);
 				}else{
 					trigger_error('Something wrong happend while fetching event details for $geventid ' . json_encode($eventresult));
@@ -313,11 +338,22 @@ function fetchEventsFromSyncToken($calendarId, $synctoken,$useremail,$dbcalendar
 	}catch(Exception $e)
 	{
 
-		trigger_error('Unable to fetch events for calendar ' . $calendarid . ' at synctoken ' . $synctoken . ' due to error ' . $e->getMessage());
+		trigger_error('Unable to fetch events for calendar ' . $calendarId . ' at synctoken ' . $synctoken . ' due to error ' . $e->getMessage());
 		$response['status']='failure';
 		$response['reason']=$e->getMessage();
 	}
 	return $response;
+}
+
+function fetchAllGsuiteUsers()
+{
+	try
+	{
+
+	}catch(Exception $e)
+	{
+		trigger_error('Unable to fetch the Gsuite users ' . $e->getMessage());
+	}
 }
 
 

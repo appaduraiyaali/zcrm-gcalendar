@@ -148,12 +148,12 @@ if($_GET['method']=="fetchprojects"){
 	$projectsdata = fetchZohoProjects();
 	print_r($projectsdata);
 }
-function getAccessToken($reFresh_token)
+function getAccessToken()
 {
-
+	$refresh_token=REFRESH_TOKEN;
 	$client_id=CLIENT_ID;
 	$client_secret= CLIENT_SECRET;
-	$access_url = "https://accounts.zoho.com/oauth/v2/token?refresh_token=".$reFresh_token."&client_id=".$client_id."&client_secret=".$client_secret."&grant_type=refresh_token";
+	$access_url = "https://accounts.zoho.com/oauth/v2/token?refresh_token=".$refresh_token."&client_id=".$client_id."&client_secret=".$client_secret."&grant_type=refresh_token";
 
 	$access_curl = curl_init();
 
@@ -188,9 +188,8 @@ function fetchZohoProjects()
 {
 	$result=array();
 	try{
-			$reFresh_token= REFRESH_TOKEN;
 	
-			$accesstoken=getAccessToken($reFresh_token);
+			$accesstoken=getAccessToken();
 			$request_url = 'https://projectsapi.zoho.com/restapi/portal/'.PROJECTPORTAL.'/projects/';
 			$method_name = 'GET';
 			$downch = curl_init();
@@ -248,11 +247,52 @@ function fetchZohoProjects()
 	return json_encode($projectslist);
 }
 
+function fetchTaskDetail($taskid,$projectid,$accesstoken)
+{
+		$result=array();
+		try{
+	
+			if($accesstoken == null)
+			{
+				$accesstoken=getAccessToken();
+			}
+			$request_url = 'https://projectsapi.zoho.com/restapi/portal/'.PROJECTPORTAL.'/projects/'.$projectid.'/tasks/'.$taskid.'/';
+			$method_name = 'GET';
+			$downch = curl_init();
+			$headers = array(
+				'Authorization:Zoho-oauthtoken ' .$accesstoken
+			);
+						 
+		 curl_setopt($downch, CURLOPT_URL, $request_url);
+    curl_setopt($downch, CURLOPT_HTTPHEADER, $headers);
+    curl_setopt($downch, CURLOPT_CUSTOMREQUEST, "GET");
+	
+    curl_setopt($downch, CURLOPT_RETURNTRANSFER, 1);
+    curl_setopt($downch, CURLOPT_CONNECTTIMEOUT, 60);
+    curl_setopt($downch, CURLOPT_TIMEOUT, 60);
+	curl_setopt($downch, CURLOPT_VERBOSE, 1);
+		 
+		 $response = curl_exec($downch);
+		 trigger_error('Response ' . $response);
+		 $projectsjson=json_decode($response,true);
+		 $result=$projectsjson['tasks'][0];
+		 $response_info = curl_getinfo($downch);
+		 curl_close($downch);
+	
+	}catch(Exception $e)
+	{
+		trigger_error('Unable to fetch Zoho Tasks for ' . $taskid . $projectid. '  due to error ' .$e->getMessage());
+	}
+	return $result;
+}
+
 function createorUpdateZProjectTasks($event,$inputparams)
 {
 	$result=array("status"=>"success");	
 	$gsuiteattendeevsstatus=array();
 	$dbattendeevsevent=array();
+	$ztaskid=null;
+	$zprojectid=$inputparams['zprojectid'];
 	try{
 			$acceptedattendees=array();
 			$attendees=$event['attendees'];
@@ -266,7 +306,7 @@ function createorUpdateZProjectTasks($event,$inputparams)
 				}
 				$gsuiteattendeevsstatus[$attemail]=$eventresponse;
 			}
-
+			$accesstoken=getAccessToken();
 			$dbuserwoztask=array();
 			$dbname=DBNAME;
 			$conn=getMysqlConnection();
@@ -296,7 +336,9 @@ function createorUpdateZProjectTasks($event,$inputparams)
 				$result['data']=$dbattendeevsevent;
 			}else{
 				$result['data']=array();
+				$createtask=true;
 			}
+			trigger_error('TaskId from Zoho ' . $ztaskid);					
 
 			// Check if Ztaskid is created for the Gsuite Event and create in Zoho Project
 			$acceptedcount=sizeof($acceptedattendees);
@@ -308,18 +350,50 @@ function createorUpdateZProjectTasks($event,$inputparams)
 					updateZTaskIdinDBEvent($ztaskid,$accepteduser,$dbeventid);				
 			}
 			
-			if(!$createtask || $acceptedcount > 1) // Eiter Event is modified
+			if(!$createtask || $acceptedcount > 1) // Meeting is modified - New Guest Added, Attendee Accepted, Attendee Declined, Attendee Removed
 			{
 				foreach($acceptedattendees as $theattendee) // TODO: Delete this loop and apply the inner code to the below iteration of all gsuite attendees 
 				{
 					if(array_key_exists($theattendee,$dbattendeevsevent))  // gsuite accepted attendee is present in db
 					{
+							
 						$dbstatus=$dbattendeevsevent[$theattendee];
 						if($dbstatus != 'accepted')
 						{
-							trigger_error('New Attendee accepted ' . $theattendee . ' event ' , $dbeventid);
-							// update the zoho task to add the owner record (if internal user)
-							// update the dbstatus of attendee to accepted.
+							//***** update the zoho task to add the owner record (if internal user)
+							//***** update the dbstatus of attendee to accepted.
+						
+							trigger_error('New Attendee accepted ' . $theattendee . ' event ' . $dbeventid);
+							$zprojectid=$inputparams['zprojectid'];
+							$taskdetail=fetchTaskDetail($ztaskid,$zprojectid,$accesstoken);
+							$owners=$taskdetail['details']['owners'];
+							$ownerids=array();
+
+							foreach($owners as $theowner)
+							{
+								$userid=$theowner['zpuid'];
+								array_push($ownerids,$userid);
+							}
+							$zuserid=getUserIdFromProject($theattendee,$zprojectid,$accesstoken);
+							if($zuserid != null)
+							{
+								array_push($ownerids,$zuserid);
+								$commaseparatedusers = implode(', ', $ownerids);
+								$formfields=array('person_responsible',$commaseparatedusers);
+								updateTask($formfields,$zprojectid,$ztaskid);
+								
+							}else{
+								trigger_error('Not an internal user ' . $theattendee . ' Accepted the event ');
+							}
+							//update db
+								$updatestatussql="update attendees set responsestatus='accepted' where eventid='$dbeventid'
+								and attendee='$theattendee'";
+								mysqli_select_db($conn, $dbname);
+								$queryresult = mysqli_query($conn, $updatestatussql);
+								if(!$queryresult)
+								{
+									trigger_error('Mysql update attendee failure :'.mysqli_error($conn));
+								}
 						}else
 						{
 							trigger_error('Attendee already accepted ' . $theattendee . ' event ' . $dbeventid);
@@ -332,7 +406,7 @@ function createorUpdateZProjectTasks($event,$inputparams)
 						trigger_error('Gsuite Accepted Event Attendee not present in db ' . $theattendee);
 
 					}
-					trigger_error('TaskId from Zoho ' . $ztaskid);					
+					
 				}
 
 				/*** Iterate the db attendees to check if any of them is removed in Gsuite Event ***/
@@ -341,20 +415,85 @@ function createorUpdateZProjectTasks($event,$inputparams)
 					
 					if(!array_key_exists($dbattendee,$gsuiteattendeevsstatus)) //present in db but not in gsuite event
 					{
-						trigger_error('Present in DB but not in Gsuite ' . $dbattendee . ' eventid ' . $dbeventid);
+						trigger_error('Present in DB but not in Gsuite ' . $dbattendee . ' eventid ' . $dbeventid . ' dbeventstatus ' . $dbstatus);
+						//  remove the ownerid from the zoho task (if internal user)
+						//  remove from dbattendee table
 						if($dbstatus == 'accepted')
 						{
-							//  remove the ownerid from the zoho task
-							//  remove from dbattendee table
-						}else{
-							// remove from db
+							
+							$zuserid=getUserIdFromProject($dbattendee,$zprojectid,$accesstoken);
+							if($zuserid != null)
+							{
+								trigger_error('Remove task owner ' . $dbattendee . ' from task ' .$ztaskid);
+								
+								$taskdetail=fetchTaskDetail($ztaskid,$zprojectid,$accesstoken);
+								$taskowners=$taskdetail['details']['owners'];
+								$modifiedownerids=array();
+
+								foreach($taskowners as $theowner)
+								{
+									$ownerid=$theowner['zpuid'];
+									if($ownerid != $zuserid)
+									{
+										array_push($modifiedownerids,$ownerid);
+									}
+								}
+								if(sizeof($modifiedownerids) >0)
+								{
+									$commaseparatedusers = implode(', ', $modifiedownerids);
+									$formfields=array('person_responsible',$commaseparatedusers);
+									updateTask($formfields,$zprojectid,$ztaskid);									
+								}
+
+							}else{
+								trigger_error('Gsuite Guest Deleted : Not a Zoho user ' . $zprojectid . ' ' . $dbattendee);
+							}
+						}
+						$updatestatussql="delete from attendees where responsestatus='accepted' and eventid='$dbeventid'
+								and attendee='$dbattendee'";
+						mysqli_select_db($conn, $dbname);
+						$queryresult = mysqli_query($conn, $updatestatussql);
+						if(!$queryresult)
+						{
+									trigger_error('Mysql update attendee failure :'.mysqli_error($conn));
 						}
 					}else if($dbstatus == 'accepted' && $gsuiteattendeevsstatus[$dbattendee] != 'accepted' )
 						// Accepted in DB but changed in Gsuite Event
 					{
-						trigger_error('DB Attendee Accepted but Gsuite status is different ' . $dbattendee . $$gsuiteattendeevsstatus[$dbattendee]);
+						$gsuitestatus=$gsuiteattendeevsstatus[$dbattendee];
+						trigger_error('DB Attendee Accepted but Gsuite status is different ' . $dbattendee . ' Gsuite status '
+							. $gsuitestatus . ' DB Status ' . $dbstatus);
 						// remove the ownerid from the zoho task
 						// update the db with the new status
+						$zprojectid=$inputparams['zprojectid'];
+						$taskdetail=fetchTaskDetail($ztaskid,$zprojectid,$accesstoken);
+						$owners=json_encode($taskdetail['details']['owners']);
+						$ownerids=array();
+
+						foreach($owners as $theowner)
+						{
+							$userid=$theowner['zpuid'];
+							array_push($ownerids,$userid);
+						}
+						
+						$zuserid=getUserIdFromProject($dbattendee,$zprojectid,$accesstoken);
+						if($zuserid != null)
+						{
+							array_push($ownerids,$zuserid);
+							$commaseparatedusers = implode(', ', $ownerids);
+							$formfields=array('person_responsible',$commaseparatedusers);
+							updateTask($formfields,$zprojectid,$ztaskid);
+							//update db
+							$updatestatussql="update attendees set responsestatus='$gsuitestatus' where eventid='$dbeventid'
+							and attendee='$dbattendee'";
+							mysqli_select_db($conn, $dbname);
+							$queryresult = mysqli_query($conn, $updatestatussql);
+							if(!$queryresult)
+							{
+								trigger_error('Mysql update attendee failure :'.mysqli_error($conn));
+							}
+
+						}
 					}
 				}
 				/*** Iterate all the gsuite attendees to check missing db entries ***********/
@@ -362,30 +501,35 @@ function createorUpdateZProjectTasks($event,$inputparams)
 				{
 					if($gsuitestatus != 'accepted')
 					{
-						if(!array_key_exists($gsuiteattendee,$dbattendeevsevent)) //present in db but not in gsuite event
+						if(!array_key_exists($gsuiteattendee,$dbattendeevsevent)) //present in gsuite event not in db
 						{
-							trigger_error('Present in GsuiteEvent but not in DB ' . $gsuiteattendee . ' eventid ' . $dbeventid);
+							
+							trigger_error('Present in GsuiteEvent but not in DB ' . $gsuiteattendee . ' eventid ' . $dbeventid . ' status ' . $gsuitestatus) ;
 							// add the gsuite attendee to the eventattendee table
+							addAttendeeToDB($gsuiteattendee,$dbeventid,$gsuitestatus);
+
 						}
 					}
 				}
 
 			}
+			mysqli_close($conn);
 	}catch(Exception $e)
 	{
 		trigger_error('Unable to create Task for attendees in event ' . json_encode($event));
 	}	
 }
 
-function getUserIdFromProject($useremail,$projectid)
+function getUserIdFromProject($useremail,$projectid,$accesstoken)
 {
 	$zuserid=null;
 	try
 	{
 
-$reFresh_token= '1000.3af45485d8fc6f33f6b0001d84440e4a.c595dc62ef3838386c3a580ee04e569e';
-	
-			$accesstoken=getAccessToken($reFresh_token);
+			if($accesstoken == null)
+			{
+				$accesstoken=getAccessToken();
+			}
 			$request_url = 'https://projectsapi.zoho.com/restapi/portal/'.PROJECTPORTAL.'/projects/'.$projectid.'/users/';
 			$method_name = 'GET';
 			$downch = curl_init();
@@ -411,7 +555,7 @@ $reFresh_token= '1000.3af45485d8fc6f33f6b0001d84440e4a.c595dc62ef3838386c3a580ee
 		 $userdetails=$usersjson['users'];
 		 foreach($userdetails as $theuser)
 			{
-				 trigger_error("User Name and email " . $theuser['name'] . $theuser['email']);
+				 //trigger_error("Zoho Project User and Email for ProjectId " .$projectid . $theuser['name'] . $theuser['email']);
 				 $zemail=$theuser['email'] ;
 				 $zuerid=$theuser['id'];
 				 if($zemail == $useremail)
@@ -430,17 +574,16 @@ $reFresh_token= '1000.3af45485d8fc6f33f6b0001d84440e4a.c595dc62ef3838386c3a580ee
 function createZProjectTask($event,$email,$inputparams)
 {
 	$ztaskid=null;
-	$refresh_token2='1000.66c1ba6b5a9c978f519981a37f0d83fe.eca69580e7a5fe47e7651a8a6771112d';
-	
 	$projectid=$inputparams['zprojectid'];
 	$endpoint='https://projectsapi.zoho.com/restapi/portal/'.PROJECTPORTAL.'/projects/'.$projectid.'/tasks/';
 	$taskname=$event['summary'];
 	$taskdescription=$event['description'];
-	$owner=getUserIdFromProject($email,$projectid);;
+	$accesstoken=getAccessToken();
+	$owner=getUserIdFromProject($email,$projectid,$accesstoken);
 	$startdate=$event['start']['dateTime'];
 	$enddate=$event['end']['dateTime'];
 	trigger_error('Owner ' . $owner. 'Stdate ' . $startdate . ' ' . $enddate);
-	$tasklistid=ZTASKLISTID;
+	$tasklistid=getTaskListId($projectid,$accesstoken);
 	try
 	{
 		$post_data=array();
@@ -467,7 +610,7 @@ function createZProjectTask($event,$email,$inputparams)
 
 		$fieldsString = http_build_query($post_data);
 		trigger_error('Zoho Task to Post ' . $fieldsString);
-		$accesstoken=getAccessToken($refresh_token2);
+		
 		$downch = curl_init();
 		$headers = array(
 				'Authorization:Zoho-oauthtoken ' .$accesstoken
@@ -502,6 +645,135 @@ function createZProjectTask($event,$email,$inputparams)
 	
 }
 
+function updateTask($post_data,$zprojectid,$ztaskid)
+{
+
+	$endpoint='https://projectsapi.zoho.com/restapi/portal/'.PROJECTPORTAL.'/projects/'.$zprojectid.'/tasks/'.$ztaskid.'/';
+	try
+	{
+		$accesstoken=getAccessToken();
+		$fieldsString = http_build_query($post_data);
+		trigger_error('Zoho Task to Post ' . $fieldsString);
+		
+		$downch = curl_init();
+		$headers = array(
+				'Authorization:Zoho-oauthtoken ' .$accesstoken
+		);
+
+		curl_setopt($downch, CURLOPT_URL, $endpoint);
+		curl_setopt($downch, CURLOPT_HTTPHEADER, $headers);
+		curl_setopt($downch, CURLOPT_CUSTOMREQUEST, "PUT");
+		
+		curl_setopt($downch, CURLOPT_RETURNTRANSFER, 1);
+		curl_setopt($downch, CURLOPT_CONNECTTIMEOUT, 60);
+		curl_setopt($downch, CURLOPT_TIMEOUT, 60);
+		curl_setopt($downch, CURLOPT_VERBOSE, 1);
+		curl_setopt($downch, CURLOPT_POSTFIELDS, $fieldsString);
+		$response=curl_exec($downch);
+		trigger_error('Zoho Project response ' . $response);
+		$taskresponse=json_decode($response,true);
+		
+	}catch(Exception $e)
+	{
+		trigger_error('Unable to create zoho project task for attendee ' . $email );
+	}
+	
+}
+
+function getTaskListId($projectid,$accesstoken)
+{
+	try
+	{
+		$tasklistid=null;
+		if($accesstoken == null)
+			{
+				$accesstoken=getAccessToken();
+			}
+		$request_url = 'https://projectsapi.zoho.com/restapi/portal/'.PROJECTPORTAL.'/projects/'.$projectid.'/tasklists/?flag=internal';
+		$method_name = 'GET';
+		$downch = curl_init();
+		$headers = array(
+				'Authorization:Zoho-oauthtoken ' .$accesstoken
+			);
+			
+		curl_setopt($downch, CURLOPT_URL, $request_url);
+	    curl_setopt($downch, CURLOPT_HTTPHEADER, $headers);
+		curl_setopt($downch, CURLOPT_CUSTOMREQUEST, "GET");
+	    curl_setopt($downch, CURLOPT_RETURNTRANSFER, 1);
+		curl_setopt($downch, CURLOPT_CONNECTTIMEOUT, 60);
+	    curl_setopt($downch, CURLOPT_TIMEOUT, 60);
+		curl_setopt($downch, CURLOPT_VERBOSE, 1);
+		 
+		 $response = curl_exec($downch);
+		 trigger_error('Response ' . $response);
+		 $tasklistsjson=json_decode($response,true);
+		 //trigger_error(json_encode($tasklistsjson));
+		 $response_info = curl_getinfo($downch);
+		 curl_close($downch);
+		/* if(!array_key_exists('tasklists',$tasklistsjson));
+		{
+			 trigger_error('Tasklists not found for this project ' . $projectid);
+			 return null;
+		}*/
+		 $tasklistsdetails=$tasklistsjson['tasklists'];
+		 foreach($tasklistsdetails as $thetasklist)
+			{
+				 trigger_error("tasklists Name and id " . $thetasklist['name'] . $thetasklist['id']);
+				 $tasklistname=$thetasklist['name'] ;
+				 $tasklistid=$thetasklist['id'];
+				 if($tasklistname == COMMON_TASKLIST_NAME)
+				{
+					 return $tasklistid;
+				}
+			}
+		 
+	}catch(Exception $e)
+	{
+		trigger_error(' Unable to fetch user ' .$useremail .' from project ' .$projectid . ' dur to ' .$e->getMessage()) ;
+	}
+	return $tasklistid;
+}
+
+function updateAttendeeStatus($theattendee,$dbeventid,$responsestatus)
+{
+	try{
+		$dbname=DBNAME;
+		$conn=getMysqlConnection();
+		mysqli_select_db($conn, $dbname);
+		$updatesql="update attendees set responsestatus='$responsestatus' where attendee='$theattendee' and eventid=$dbeventid";
+			$queryresult = mysqli_query($conn, $updatesql);
+			if(!$queryresult)
+			{
+				trigger_error(' Unable to update  for  '.$dbeventid.' and attendee '.$theattendee .mysqli_error($conn));
+			}
+			mysqli_close($conn);
+	}
+	catch(Exception $e)
+	{
+		trigger_error('Unable to update dbevent with ztaskid ' . $taskid);
+	}	
+	
+}
+
+function addAttendeeToDB($theattendee,$dbeventid,$responsestatus)
+{
+	try{
+		$dbname=DBNAME;
+		$conn=getMysqlConnection();
+		mysqli_select_db($conn, $dbname);
+		$addattendeesql="insert into attendees(eventid,attendee,responsestatus) values($dbeventid,'$theattendee','$responsestatus')";
+		$queryresult =mysqli_query($conn, $addattendeesql);
+		if(!$queryresult)
+		{
+			trigger_error(' Unable to update projecttaskid for event '.$dbeventid.' and attendee '.$theattendee .mysqli_error($conn));
+		}
+		mysqli_close($conn);
+	}catch(Exception $e)
+	{
+		trigger_error('Unable to update dbevent with ztaskid ' . $taskid);
+	}
+}
+
 function updateZTaskIdinDBEvent($ztaskid,$theattendee,$dbeventid)
 {
 
@@ -523,6 +795,7 @@ function updateZTaskIdinDBEvent($ztaskid,$theattendee,$dbeventid)
 				trigger_error(' Unable to update  for  '.$dbeventid.' and attendee '.$theattendee .mysqli_error($conn));
 			}
 		}
+		mysqli_close($conn);
 	}catch(Exception $e)
 	{
 		trigger_error('Unable to update dbevent with ztaskid ' . $taskid);
