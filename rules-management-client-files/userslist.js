@@ -60,13 +60,16 @@ $scope.adduser=function(email){
 
 $scope.removeuser=function(email){
 	console.log(email);
-	$.get("/gsuitecalendar/usersendpoint.php?method=removeuser&useremail="+email,
-		function(data) {
-			//var removeuserrequestdata = JSON.parse(data);
-			alert("User has been Removed..");
-			$window.location.reload();
-		}
-	);
+	var confirmation = prompt("Please type 'DELETE' and Then Click 'OK' to Confirm Deleting  the User : "+email);
+	if (confirmation == "DELETE") {
+		$.get("/gsuitecalendar/usersendpoint.php?method=removeuser&useremail="+email,
+			function(data) {
+				//var removeuserrequestdata = JSON.parse(data);
+				alert("User has been Removed..");
+				$window.location.reload();
+			}
+		);
+	}
 }
 
 

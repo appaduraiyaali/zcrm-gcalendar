@@ -9,6 +9,11 @@ function IsJsonString(data) {
 	}
 	return true;
 }
+
+
+
+
+
 $.get("/gsuitecalendar/RuleConfiguration.php?method=fetchrules",
 	function(data) {
 		if(IsJsonString(data)){
@@ -16,10 +21,31 @@ $.get("/gsuitecalendar/RuleConfiguration.php?method=fetchrules",
 			$scope.rulesdata = responsedata;
 			console.log("RulesData..");
 			console.log($scope.rulesdata);
+			$.get("/gsuitecalendar/ZProjectIntegration.php?method=fetchprojects",
+				function(data) {
+					if(IsJsonString(data)){
+						var projectdata = JSON.parse(data);
+						console.log("projectdata..");
+						console.log(projectdata);
+						$scope.projectslist = projectdata;
+						for(var i=0;i<$scope.rulesdata.data.length;i++){
+							for(var j=0;j<$scope.projectslist.length;j++){
+								if($scope.projectslist[j].projectid==$scope.rulesdata.data[i].zprojectid){
+									$scope.rulesdata.data[i].zprojectname = $scope.projectslist[j].projectname;
+									$scope.$apply();
+								}
+							}	
+						} 
+						$scope.$apply();
+					}
+				}
+			);
 			$scope.$apply();	
 		}
 	}
 );
+
+
 $scope.viewrule = function(ruleindex){
 	var ruledata = JSON.parse($scope.rulesdata.data[ruleindex].criteria);
 console.log(ruledata);
