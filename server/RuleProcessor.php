@@ -293,7 +293,7 @@ $datastr='{
 	}
 }';
 $datajson=json_decode($datastr,true);
-trigger_error('Attendees ' . json_encode($datajson['attendees']));
+//trigger_error('Attendees ' . json_encode($datajson['attendees']));
 //$ruleexpression=json_decode($nestedlevel1json,true);
 $ruleexpression=json_decode($nestedlevel3json,true);
 

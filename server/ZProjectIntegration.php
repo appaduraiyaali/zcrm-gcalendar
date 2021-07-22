@@ -148,12 +148,28 @@ if($_GET['method']=="fetchprojects"){
 	$projectsdata = fetchZohoProjects();
 	print_r($projectsdata);
 }
+$final_access_token=null;
+ $tokengeneratedtime=null;
 function getAccessToken()
 {
+	global $final_access_token;
+	global $tokengeneratedtime;	
+
+	if($final_access_token != null && $tokengeneratedtime != null )
+	{
+		$timediff=time() - $tokengeneratedtime;
+		if($timediff < 3000)
+		{
+			return $final_access_token;
+		}else{
+			trigger_error('Time Exceeeded and new token will be generated');
+		}
+	}
+			
 	$refresh_token=REFRESH_TOKEN;
 	$client_id=CLIENT_ID;
 	$client_secret= CLIENT_SECRET;
-	$access_url = "https://accounts.zoho.com/oauth/v2/token?refresh_token=".$refresh_token."&client_id=".$client_id."&client_secret=".$client_secret."&grant_type=refresh_token";
+	$access_url = ZDOMAINURL."/oauth/v2/token?refresh_token=".$refresh_token."&client_id=".$client_id."&client_secret=".$client_secret."&grant_type=refresh_token";
 
 	$access_curl = curl_init();
 
@@ -180,6 +196,7 @@ function getAccessToken()
 	curl_close($access_curl);
 	$res = json_decode($access_response);
 	$final_access_token = $res->access_token;
+	$tokengeneratedtime=time();
 	trigger_error('Latest Access Token ' . $final_access_token);
 	return $final_access_token;
 }
@@ -190,7 +207,7 @@ function fetchZohoProjects()
 	try{
 	
 			$accesstoken=getAccessToken();
-			$request_url = 'https://projectsapi.zoho.com/restapi/portal/'.PROJECTPORTAL.'/projects/';
+			$request_url = ZPROJECTAPIURL.'/restapi/portal/'.PROJECTPORTAL.'/projects/';
 			$method_name = 'GET';
 			$downch = curl_init();
 			$headers = array(
@@ -256,7 +273,7 @@ function fetchTaskDetail($taskid,$projectid,$accesstoken)
 			{
 				$accesstoken=getAccessToken();
 			}
-			$request_url = 'https://projectsapi.zoho.com/restapi/portal/'.PROJECTPORTAL.'/projects/'.$projectid.'/tasks/'.$taskid.'/';
+			$request_url = ZPROJECTAPIURL.'/restapi/portal/'.PROJECTPORTAL.'/projects/'.$projectid.'/tasks/'.$taskid.'/';
 			$method_name = 'GET';
 			$downch = curl_init();
 			$headers = array(
@@ -318,9 +335,10 @@ function createorUpdateZProjectTasks($event,$inputparams)
 			$totalrows=mysqli_num_rows($queryresult);
 			trigger_error('Total Rows for event attendees ' . $totalrows . ' for event ' . $geventid);
 			$createtask=false;
+			$dbeventid=null;
 			if($totalrows > 0)
 			{	
-				$dbeventid=null;
+				
 				while ($fetchrow = mysqli_fetch_array($queryresult)) 
 				{	
 					$ztaskid=$fetchrow['ztaskid'];
@@ -329,7 +347,7 @@ function createorUpdateZProjectTasks($event,$inputparams)
 						$createtask=true;
 					}
 					$dbemail=$fetchrow['attendeeemail'];
-					$dbeventid=$fetchrow['dbeventid'];
+					$dbeventid=$fetchrow['dbeventid']; // the above query will result only singleid
 					$dbresponsestatus=$fetchrow['responsestatus'];
 					$dbattendeevsevent[$dbemail]=$dbresponsestatus;
 				}						
@@ -530,7 +548,7 @@ function getUserIdFromProject($useremail,$projectid,$accesstoken)
 			{
 				$accesstoken=getAccessToken();
 			}
-			$request_url = 'https://projectsapi.zoho.com/restapi/portal/'.PROJECTPORTAL.'/projects/'.$projectid.'/users/';
+			$request_url = ZPROJECTAPIURL.'/restapi/portal/'.PROJECTPORTAL.'/projects/'.$projectid.'/users/';
 			$method_name = 'GET';
 			$downch = curl_init();
 			$headers = array(
@@ -555,11 +573,12 @@ function getUserIdFromProject($useremail,$projectid,$accesstoken)
 		 $userdetails=$usersjson['users'];
 		 foreach($userdetails as $theuser)
 			{
-				 //trigger_error("Zoho Project User and Email for ProjectId " .$projectid . $theuser['name'] . $theuser['email']);
-				 $zemail=$theuser['email'] ;
-				 $zuerid=$theuser['id'];
+				// trigger_error("Zoho Project User and Email for ProjectId " .$projectid . $theuser['zpuid'] .' '. $theuser['email'] .' '. $useremail);
+				 $zemail=$theuser['email'] ;				 
 				 if($zemail == $useremail)
 				{
+					 $zuserid=$theuser['zpuid'];
+					 trigger_error('UserId Matched ' .$zuserid);
 					 return $zuserid;
 				}
 			}
@@ -575,7 +594,7 @@ function createZProjectTask($event,$email,$inputparams)
 {
 	$ztaskid=null;
 	$projectid=$inputparams['zprojectid'];
-	$endpoint='https://projectsapi.zoho.com/restapi/portal/'.PROJECTPORTAL.'/projects/'.$projectid.'/tasks/';
+	$endpoint=ZPROJECTAPIURL.'/restapi/portal/'.PROJECTPORTAL.'/projects/'.$projectid.'/tasks/';
 	$taskname=$event['summary'];
 	$taskdescription=$event['description'];
 	$accesstoken=getAccessToken();
@@ -595,18 +614,39 @@ function createZProjectTask($event,$email,$inputparams)
 			$post_data['person_responsible']=$owner;
 		}
 		
-		$startdateDT=DateTime::createFromFormat('Y-m-d\TH:i:sP',$startdate);//'2021-05-06T09:00:00+05:30');
-		$post_data['start_date']=$startdateDT->format('m-d-Y');
-		$post_data['start_time']=$startdateDT->format('H:i');
+		if(!empty($startdate))
+		{
+			$startdateDT=DateTime::createFromFormat('Y-m-d\TH:i:sP',$startdate);//'2021-05-06T09:00:00+05:30');
+			$post_data['start_date']=$startdateDT->format('m-d-Y');
+			$post_data['start_time']=$startdateDT->format('H:i');
+		}else{
+			$startdateWOTime=$event['start']['date'];
+			$startdateDT=strtotime($startdateWOTime);//2021-08-01
+			$post_data['start_date']=date('m-d-Y', $startdateDT);
+			$post_data['start_time']="00:00";
+			$enddateWOTime=$event['end']['date'];			
+			$enddateDT = strtotime($enddateWOTime);		
+			$post_data['end_date']=date('m-d-Y', $enddateDT);		
+			$post_data['end_time']="23:59";
+			$post_data['duration_type']='hrs';
+			$post_data['duration']="23";
+
+		}
+			
+		if(!empty($enddate))
+		{
+			$enddateDT = DateTime::createFromFormat('Y-m-d\TH:i:sP',$enddate);		
+			$post_data['end_date']=$enddateDT->format('m-d-Y');		
+			$post_data['end_time']=$enddateDT->format('H:i');
+			$interval=$startdateDT->diff($enddateDT);	
+			$diffhr=$interval->format("%H");
+			$post_data['duration_type']='hrs';
+			$post_data['duration']=$diffhr;
+		}else{
+
+		}
+
 		
-		$enddateDT = DateTime::createFromFormat('Y-m-d\TH:i:sP',$enddate);		
-		$post_data['end_date']=$enddateDT->format('m-d-Y');		
-		$post_data['end_time']=$enddateDT->format('H:i');
-		
-		$interval=$startdateDT->diff($enddateDT);	
-		$diffhr=$interval->format("%H");
-		$post_data['duration_type']='hrs';
-		$post_data['duration']=$diffhr;
 
 		$fieldsString = http_build_query($post_data);
 		trigger_error('Zoho Task to Post ' . $fieldsString);
@@ -648,7 +688,7 @@ function createZProjectTask($event,$email,$inputparams)
 function updateTask($post_data,$zprojectid,$ztaskid)
 {
 
-	$endpoint='https://projectsapi.zoho.com/restapi/portal/'.PROJECTPORTAL.'/projects/'.$zprojectid.'/tasks/'.$ztaskid.'/';
+	$endpoint=ZPROJECTAPIURL.'/restapi/portal/'.PROJECTPORTAL.'/projects/'.$zprojectid.'/tasks/'.$ztaskid.'/';
 	try
 	{
 		$accesstoken=getAccessToken();
@@ -689,7 +729,7 @@ function getTaskListId($projectid,$accesstoken)
 			{
 				$accesstoken=getAccessToken();
 			}
-		$request_url = 'https://projectsapi.zoho.com/restapi/portal/'.PROJECTPORTAL.'/projects/'.$projectid.'/tasklists/?flag=internal';
+		$request_url = ZPROJECTAPIURL.'/restapi/portal/'.PROJECTPORTAL.'/projects/'.$projectid.'/tasklists/?flag=internal';
 		$method_name = 'GET';
 		$downch = curl_init();
 		$headers = array(

@@ -21,7 +21,7 @@ function fetchEventFromGEventId($gid)
 				trigger_error('error:'.mysqli_error($conn));
 			}
 			$totalrows=mysqli_num_rows($queryresult);
-			trigger_error('Events Fetched : Total Rows ' . $totalrows);
+			trigger_error('Matching Events in DB Fetched : Total Rows ' . $totalrows);
 			if($totalrows > 0)
 			{				
 				while ($fetchrow = mysqli_fetch_array($queryresult)) 
@@ -53,17 +53,17 @@ function fetchEventFromGEventId($gid)
 function addEvent($theevent)
 {
 	try{
-			trigger_error('DBEvent Addition invoked for ' . $theevent['id']);
+			trigger_error('DBEvent Addition invoked for ' . $theevent['id'] . json_encode($theevent));
 			$dbname=DBNAME;
 			$conn=getMysqlConnection();
 			mysqli_select_db($conn, $dbname);
 			$eventcreated=$theevent['created'];		
 			$createdts=strtotime($eventcreated);
-			$desc=$theevent['description'];
+			$desc=mysqli_real_escape_string($conn,$theevent['description']);
 			$geventid=$theevent['id'];
 			$calendarid=$theevent['calendarid'];	
 			$status=$theevent['status'];
-			$summary=$theevent['summary'];
+			$summary=mysqli_real_escape_string($conn,$theevent['summary']);
 			$updated=$theevent['updated'];
 			$updatedts=strtotime($updated);
 			$organizerjson=$theevent['organizer'];
@@ -71,11 +71,28 @@ function addEvent($theevent)
 			$creatorjson=$theevent['creator'];
 			$creator=$creatorjson['email'];
 			$eventstart=$theevent['start']['dateTime'];
-			$eventstartts=strtotime($eventstart);
+			if(!empty($eventstart))
+			{
+				$eventstartts=strtotime($eventstart);
+			}else{
+				$eventstart=$theevent['start']['date'];
+				$eventstartts=strtotime($eventstart);
+
+			}
 			$eventend=$theevent['end']['dateTime'];
-			$eventendts=strtotime($eventend);
-			$eventinsert="INSERT INTO gevent (calendarid,geventid,starttime,endtime,created,updated,status,description,title)
-				VALUES ('$calendarid', '$geventid', $eventstartts,$eventendts,$createdts,$updatedts,'$status','$desc','$summary')";
+			if(!empty($eventend))
+			{
+				$eventendts=strtotime($eventend);
+			}else{
+				$eventend=$theevent['end']['date'];
+				$eventendts=strtotime($eventend);
+			}
+			$recurringid=$theevent['recurringEventId'];
+			$parent_id=$theevent['parentid'];
+			
+
+			$eventinsert="INSERT INTO gevent (calendarid,geventid,starttime,endtime,created,updated,status,description,title,parent_recurring_id)
+				VALUES ('$calendarid', '$geventid', $eventstartts,$eventendts,$createdts,$updatedts,'$status','$desc','$summary','$parent_id')";
 				$queryresult =mysqli_query($conn, $eventinsert);
 
 				if ($queryresult === TRUE) {
@@ -94,7 +111,7 @@ function addEvent($theevent)
 						}
 					}
 				}else{
-					trigger_error(' DBEvent Addition failed due to error:'.mysqli_error($conn));
+					trigger_error(' DBEvent Addition Query ' . $eventinsert . ' failed due to error:'.mysqli_error($conn));
 				}
 	}catch(Exception $e)
 	{
@@ -118,6 +135,7 @@ function checkModifiedEvent($gsuiteevent)
 		$geventdesc=$gsuiteevent['description'];
 		
 		$dbevent=fetchEventFromGEventId($geventid);
+	
 		$dbeventdata=$dbevent['data'][0];
 		$dbsummary=$dbeventdata['title'];
 		$dbdesc=$dbeventdata['description'];
@@ -215,7 +233,7 @@ function runRulesForEvent($eventdata)
 		$queryresult = mysqli_query($conn, $ruleconfigsql);
 		trigger_error('error:'.mysqli_error($conn));
 		$totalrows=mysqli_num_rows($queryresult);
-		trigger_error('Total Rows ' . $totalrows);
+		trigger_error('Total Rows Fetched from RuleConfig ' . $totalrows);
 		if($totalrows > 0)
 		{			
 			while ($fetchrow = mysqli_fetch_array($queryresult)) 

@@ -14,8 +14,9 @@ if($method=="fetchuser"){
 }
 if($method=="adduser"){
     $useremail = $_GET['useremail'];
+	$username=$_GET['username'];
     //addUser($useremail);
-    $response = addUser($useremail);
+    $response = addUser($useremail,$username);
     if($response['status']=="failure"){
         echo json_encode($response);
     }

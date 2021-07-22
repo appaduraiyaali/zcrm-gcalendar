@@ -5,6 +5,7 @@ require_once(__DIR__.DIRECTORY_SEPARATOR.'GCalendarOperation.php');
 require_once(__DIR__.DIRECTORY_SEPARATOR.'CommonUtility.php');
 
 trigger_error('Notification Recieved from Gsuite ' );
+
 $entityBody = file_get_contents('php://input');
 trigger_error('Request Body ' . $entityBody);
 $headers =  getallheaders();
@@ -29,18 +30,25 @@ function handleNotification($headers)
 		$conn=getMysqlConnection();
 		$dbname=DBNAME;
 		mysqli_select_db($conn, $dbname);
-		$calendarsql="SELECT STATUS,calendarid,nextsynctoken,gcalid,email FROM `calendarconfig` cconfig join calendaruser cuser on cconfig.userid=cuser.userid and gcalid='primary' and email='$token'";
+		$calendarsql="SELECT STATUS,calendarid,nextsynctoken,gcalid,email,cuser.userid as userid FROM `calendarconfig` cconfig join calendaruser cuser on cconfig.userid=cuser.userid and gcalid='primary' and email='$token'";
 		$queryresult = mysqli_query($conn, $calendarsql);
 		trigger_error('mysql error:'.mysqli_error($conn));
 		$totalrows=mysqli_num_rows($queryresult);
-		$fetchrow = mysqli_fetch_array($queryresult); 
-		$email=$fetchrow['email'];
-		$nextsynctoken=$fetchrow['nextsynctoken'];
-		$gcalid=$fetchrow['gcalid'];
-		$dbcalendarid=$fetchrow['calendarid'];
-		trigger_error('Fetch Events from synctoken ' . $nextsynctoken . ' for '. $email);
-		$eventresult=fetchEventsFromSyncToken($gcalid,$nextsynctoken,$email,$dbcalendarid);
-		updateNextSyncToken($dbcalendarid,$eventresult['nexteventsynctoken']);
+		if($totalrows == 1)
+		{
+			$fetchrow = mysqli_fetch_array($queryresult); 
+			$email=$fetchrow['email'];
+			$nextsynctoken=$fetchrow['nextsynctoken'];
+			$gcalid=$fetchrow['gcalid'];
+			$userid=$fetchrow['userid'];
+			$dbcalendarid=$fetchrow['calendarid'];
+			trigger_error('Fetch Events from synctoken ' . $nextsynctoken . ' for '. $email);
+			$eventresult=fetchEventsFromSyncToken($gcalid,$nextsynctoken,$email,$dbcalendarid);
+			trigger_error('Update Next Sync Token' . $eventresult['nexteventsynctoken']);
+			updateNextSyncToken($dbcalendarid,$eventresult['nexteventsynctoken'],$userid);
+		}else{
+			trigger_error('ERROR : Unable to find Notication user in db ' . $token . ' ' . $totalrows);
+		}
 
 	}catch(Exception $e)
 	{
@@ -48,13 +56,13 @@ function handleNotification($headers)
 	}
 }
 
-function updateNextSyncToken($dbcalendarid,$nexttoken)
+function updateNextSyncToken($dbcalendarid,$nexttoken,$userid)
 {
 	try{
 		$conn=getMysqlConnection();
 		$dbname=DBNAME;
 		mysqli_select_db($conn, $dbname);
-		$updatetokensql="update calendarconfig set nextsynctoken='$nexttoken' where calendarid=$dbcalendarid";
+		$updatetokensql="update calendarconfig set nextsynctoken='$nexttoken' where calendarid=$dbcalendarid and userid=$userid";
 		$queryresult = mysqli_query($conn, $updatetokensql);
 		if(!$queryresult)
 		trigger_error('mysql query result and error:' . $queryresult .mysqli_error($conn));

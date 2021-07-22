@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jun 12, 2021 at 02:45 PM
+-- Generation Time: Jun 18, 2021 at 12:12 AM
 -- Server version: 10.4.18-MariaDB
 -- PHP Version: 7.3.27
 
@@ -101,13 +101,6 @@ CREATE TABLE `ruleconfig` (
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
--- Dumping data for table `ruleconfig`
---
-
-INSERT INTO `ruleconfig` (`ruleid`, `rulename`, `zprojectid`, `description`, `criteria`, `priority`, `emails`, `isactive`) VALUES
-(5, 'Sample Rule', '1600500000001081005', 'Sample Description for this rule..', '{\"condition\":\"AND\",\"rules\":[{\"id\":\"description\",\"field\":\"description\",\"type\":\"string\",\"input\":\"text\",\"operator\":\"contains\",\"value\":\"Project\"},{\"id\":\"email\",\"field\":\"email\",\"type\":\"string\",\"input\":\"text\",\"operator\":\"equal\",\"value\":\"appadurai@bizappln.com\"},{\"condition\":\"OR\",\"rules\":[{\"condition\":\"OR\",\"rules\":[{\"id\":\"summary\",\"field\":\"summary\",\"type\":\"string\",\"input\":\"text\",\"operator\":\"contains\",\"value\":\"Notification\"},{\"id\":\"email\",\"field\":\"email\",\"type\":\"string\",\"input\":\"text\",\"operator\":\"contains\",\"value\":\"zylker\"}]},{\"condition\":\"AND\",\"rules\":[{\"id\":\"description\",\"field\":\"description\",\"type\":\"string\",\"input\":\"text\",\"operator\":\"not_contains\",\"value\":\"google\"},{\"id\":\"summary\",\"field\":\"summary\",\"type\":\"string\",\"input\":\"text\",\"operator\":\"equal\",\"value\":\"Test\"}]}]}],\"valid\":true}', 1, 'appadurai@bizappln.com', 1);
-
---
 -- Indexes for dumped tables
 --
 
@@ -156,25 +149,25 @@ ALTER TABLE `ruleconfig`
 -- AUTO_INCREMENT for table `attendees`
 --
 ALTER TABLE `attendees`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=47;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `calendarconfig`
 --
 ALTER TABLE `calendarconfig`
-  MODIFY `calendarid` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `calendarid` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `gevent`
 --
 ALTER TABLE `gevent`
-  MODIFY `eventid` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
+  MODIFY `eventid` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `ruleconfig`
 --
 ALTER TABLE `ruleconfig`
-  MODIFY `ruleid` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `ruleid` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- Constraints for dumped tables

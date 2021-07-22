@@ -19,13 +19,14 @@ $.get("/gsuitecalendar/usersendpoint.php?method=fetchuser",
 	}
 );
 
-$scope.adduser=function(email){
+$scope.adduser=function(email,username){
 	console.log(email);
+	console.log(username);
 	if(!email){
 		alert("Enter the Valid Email Address..");
 	}
 	else{
-		$.get("/gsuitecalendar/usersendpoint.php?method=adduser&useremail="+email,
+		$.get("/gsuitecalendar/usersendpoint.php?method=adduser&useremail="+email+"&username="+username,
 			function(data) {
 				if(data==''){
 					console.log("Data is Empty now..");
@@ -42,7 +43,7 @@ $scope.adduser=function(email){
 						alert(addrequestdata.reason);
 					}
 					if(addrequestdata.status=="failure"&&!addrequestdata.reason.includes("already exist")){
-						alert("User Email not available in GSuite..");
+						alert("User email is not available in GSuite..");
 					}
 				}
 				else{

@@ -7,7 +7,7 @@ require_once(__DIR__.DIRECTORY_SEPARATOR.'ZProjectIntegration.php');
 include_once __DIR__ . '/google-api-php-client--PHP8.0/vendor/autoload.php';
 
 use ReallySimpleJWT\Token;
-putenv('GOOGLE_APPLICATION_CREDENTIALS='.__DIR__.'/gsuitecredentials.json');
+putenv('GOOGLE_APPLICATION_CREDENTIALS='.__DIR__.'/'.GOOGLE_CREDENTIALS);
 //putenv('GOOGLE_APPLICATION_CREDENTIALS='.__DIR__.'/keywordrepo-8ed71daeee65.json');
 //doFullCalendarEventsSynch('appadurai@yaalidatrixproj.com');
 //checkUserExistGsuite('paolo@bytekmarketing.it');
@@ -15,7 +15,7 @@ putenv('GOOGLE_APPLICATION_CREDENTIALS='.__DIR__.'/gsuitecredentials.json');
 //setWatcher('appadurai@yaalidatrixproj.com','20fdedbf0-a845-11e3-1515e2-0800200c9a6689111');
 //fetchEventsFromSyncToken('primary','CLD1k4zqpPACELD1k4zqpPACGAUgyv7jrwE=','appadurai@yaalidatrixproj.com'); //CLD1k4zqpPACELD1k4zqpPACGAUgyv7jrwE=
 
-//stopWatcher('appadurai@yaalidatrixproj.com','20fdedbf0-a845-11e3-1515e2-0800200c9a6689111');
+
 
 function connectGoogleClient()
 {
@@ -60,16 +60,38 @@ $events = $results->getItems();
 trigger_error('Events ' . json_encode($events));
 }
 
-function channels()
+function getUserCalendarList($useremail)
 {
-
+	$result=array();
+	$client = new Google\Client();
+	$client->useApplicationDefaultCredentials();
+	$client->setApplicationName("Client_Library_Examples");
+	$client->setSubject($useremail);
+	$client->setScopes(['https://www.googleapis.com/auth/calendar','https://www.googleapis.com/auth/calendar.events']);	
+	//$client->fetchAccessTokenWithAssertion();
+	$service = new Google_Service_Calendar($client);
+	$calendarId = 'primary';
+	$optParams = array(
+	  'maxResults' => 2000,
+	  'singleEvents' => true  
+	);
+	
+	$calendarsList=$service->calendarList->listCalendarList()->getItems( );
+	trigger_error('Calendars ' . json_encode($calendarsList));
+	foreach($calendarsList as $calendar)
+	{
+		trigger_error('##############################################################Calendar Id ' . $calendar->getId());
+		doFullCalendarEventsSynch($useremail,$calendar->getId());
+		trigger_error('****************************************************************************************');
+	}
+	
 }
 
 function stopWatcher($useremail,$watcherid,$resourceid)
 {
 	$stopresult=null;
 	try{
-
+		trigger_error('Stopping the watcher for user ' .$useremail. ' ' .$watcherid. ' ' . $resourceid);
 		$client = new Google\Client();
 		$client->useApplicationDefaultCredentials();
 		$client->setApplicationName("Client_Library_Examples");
@@ -114,7 +136,7 @@ function setWatcher($useremail,$watcherid)
 		$channel->setType('web_hook');
 		$channel->setResourceId($useremail.'_primary');
 		$channel->setToken($useremail);
-		$channel->setAddress('https://d40okpmrbb5wv.cloudfront.net/gsuitecalendar/NotificationReciever.php');
+		$channel->setAddress(WEBOOKDOMAIN.'gsuitecalendar/NotificationReciever.php');
 		trigger_error('Event class ' . $service->events); // Google_Service_Calendar_Resource_Events
 		trigger_error('Calendar List ' . $service->calendarList);
 		$calendarlist=$service->calendarList->listCalendarList(); // Google_Service_Calendar_CalendarList
@@ -122,6 +144,7 @@ function setWatcher($useremail,$watcherid)
 		
 		$result = $service->events->watch('primary', $channel);
 		trigger_error('Watch Response ' . json_encode($result));
+		trigger_error('Watching  Resource is ' . $result['resourceId']);
 	}catch(Exception $e)
 	{
 		trigger_error($e->getMessage());
@@ -170,6 +193,7 @@ function checkUserExistGsuite($useremail)
 			$result['userexist']='true';
 			$result['guserid']=$gsuiteid;
 			
+			
 		}else{
 			$result['status']='success';
 			$result['userexist']='false';
@@ -178,7 +202,7 @@ function checkUserExistGsuite($useremail)
 		
 	}catch(Exception $e)
 	{
-		trigger_error($e->getMessage());
+		trigger_error('Gsuite User Operation Error ' . $e->getTraceAsString() . $e->getMessage());
 		$result['status']='failure';
 		$result['error']=$e->getMessage();
 		
@@ -186,7 +210,7 @@ function checkUserExistGsuite($useremail)
 	return $result;
 }
 
-function doFullCalendarEventsSynch($useremail)
+function doFullCalendarEventsSynch($useremail,$calendarId)
 {
 
 	$result=array();
@@ -198,10 +222,10 @@ function doFullCalendarEventsSynch($useremail)
 	$client->setScopes(['https://www.googleapis.com/auth/calendar','https://www.googleapis.com/auth/calendar.events']);	
 	//$client->fetchAccessTokenWithAssertion();
 	$service = new Google_Service_Calendar($client);
-	$calendarId = 'primary';
+	//$calendarId = 'primary';
 	$optParams = array(
 	  'maxResults' => 2000,
-	  'singleEvents' => true  
+	  'singleEvents' => false  
 	);
 	/*
 	$calendarsList=$service->calendarList->listCalendarList()->getItems( );
@@ -218,6 +242,7 @@ function doFullCalendarEventsSynch($useremail)
 			if($nextpage != null)
 			{
 				$optParams['pageToken']=$nextpage;
+
 			}
 			$results = $service->events->listEvents($calendarId, $optParams);
 			$nextpage=$results->getNextPageToken( );
@@ -242,7 +267,7 @@ function doFullCalendarEventsSynch($useremail)
 	return $result;
 }
 
-function fetchEventsFromSyncToken($calendarId, $synctoken,$useremail,$dbcalendarid)
+function fetchEventbyId($useremail,$calendarId,$gsuiteeventid)
 {
 	$response=array();
 	try
@@ -254,10 +279,44 @@ function fetchEventsFromSyncToken($calendarId, $synctoken,$useremail,$dbcalendar
 		$client->setSubject($useremail);
 		$client->setScopes(['https://www.googleapis.com/auth/calendar','https://www.googleapis.com/auth/calendar.events']);	
 		//$client->fetchAccessTokenWithAssertion();
+		$service = new Google_Service_Calendar($client);		
+		$event = $service->events->get($calendarId, $gsuiteeventid); //Google_Service_Calendar_Resource_Events -> Google_Service_Calendar_Events
+		trigger_error('Event fetched for id ' . $gsuiteeventid . $event->getRecurrence() . ' ' . $event->getStatus() . ' ' .$event->getEnd());
+		
+		return $event;
+	}catch(Exception $e)
+	{
+		trigger_error('Unable to fetch event for eventid ' . $gsuiteeventid .  ' due to error ' . $e->getMessage());
+		$response['status']='failure';
+		$response['reason']=$e->getMessage();
+	}	
+}
+
+function fetchEventsFromSyncToken($calendarId, $synctoken,$useremail,$dbcalendarid)
+{
+	$response=array();
+	try
+	{
+		$dbname=DBNAME;
+		$conn=getMysqlConnection();
+		mysqli_select_db($conn, $dbname);
+		$client = new Google\Client();
+		$client->useApplicationDefaultCredentials();
+		$client->setApplicationName("Client_Library_Examples");
+		//$client->setSubject('appadurai@yaalidatrixproj.com');
+		$client->setSubject($useremail);
+		$client->setScopes(['https://www.googleapis.com/auth/calendar','https://www.googleapis.com/auth/calendar.events']);	
+		//$client->fetchAccessTokenWithAssertion();
 		$service = new Google_Service_Calendar($client);
-		trigger_error('Event class ' . $service->events);
+		trigger_error('Event current Sync Token ' . $synctoken);
+		$formatteddate=new DateTime();
+		$initonemonthafter=$formatteddate->add(new DateInterval('P30D'));
+		$onemonthafterStr=$initonemonthafter->format('c');
 		$optParams = array(
-	  'syncToken' => $synctoken
+			'maxResults' => 2000,
+			'syncToken' => $synctoken,
+			'singleEvents'=>true
+			
 	);
 		$results = $service->events->listEvents($calendarId, $optParams); //Google_Service_Calendar_Resource_Events -> Google_Service_Calendar_Events
 			$nextpage=$results->getNextPageToken( );
@@ -270,6 +329,7 @@ function fetchEventsFromSyncToken($calendarId, $synctoken,$useremail,$dbcalendar
 			trigger_error('Event Next Sync Token ' . $results->getNextSyncToken( ));
 			trigger_error('Event Next Page ' . $nextpage);
 			$events = $results->getItems();
+			trigger_error('Total Events Received ' . sizeof($events));
 			trigger_error('Events List ' . json_encode($events));
 			foreach($events as $theevent)
 			{
@@ -286,8 +346,28 @@ function fetchEventsFromSyncToken($calendarId, $synctoken,$useremail,$dbcalendar
 				$creator=$creatorjson['email'];
 				$eventstart=$theevent['start']['dateTime'];
 				$eventend=$theevent['end']['dateTime'];
+				
 				$attendees=$theevent['attendees'];
+				$recurringid=$theevent['recurringEventId'];
+				$theevent['useremail']=$useremail;
+				$theevent['calendarId']=$calendarId;
 
+				if(empty($attendees))
+				{
+					trigger_error('Ignoring Events without Attendees ' . $geventid);
+					continue;
+				}
+
+				if(!empty($eventstart))
+				{
+					$startdateDT= DateTime::createFromFormat('Y-m-d\TH:i:sP',$eventstart);
+					if($startdateDT > $initonemonthafter)
+					{
+						trigger_error('Ignore Event greater than a month ' . $geventid . ' ' . $eventstart);
+						continue;
+					}
+				}
+				
 				foreach($attendees as $attendee)
 				{
 					$attemail=$attendee['email'];
@@ -297,39 +377,117 @@ function fetchEventsFromSyncToken($calendarId, $synctoken,$useremail,$dbcalendar
 				$eventresult=fetchEventFromGEventId($geventid);
 				if($eventresult['status'] == 'success_withnodata')
 				{
-					// Add Event data into db
-					$theevent['calendarid']=$dbcalendarid;
-					addEvent($theevent);
-					$ruleresult=runRulesforEvent($theevent);
-					trigger_error('Matching Rules Array ' . json_encode($ruleresult));
-					$matchingrules=$ruleresult['data'];
-					$inputparams=null;
-					if(count($matchingrules) > 0)
+					if(empty($recurringid))
 					{
-						$thematchingrule=$matchingrules[0]; // TODO: Sort and get the highest priority matching rule
-						$inputparams=array('zprojectid'=>$thematchingrule['zprojectid']);
-						
+						// Add Event data into db
+						$theevent['calendarid']=$dbcalendarid;
+						$theevent['parentid']=null;
+						addEvent($theevent);
+						$ruleresult=runRulesforEvent($theevent);					
+						$matchingrules=$ruleresult['data'];
+						$inputparams=null;
+						if(count($matchingrules) > 0)
+						{
+							
+							$thematchingrule=$matchingrules[0]; // TODO: Sort and get the highest priority matching rule
+							trigger_error('Matching Rules Array ' . json_encode($thematchingrule));
+							$inputparams=array('zprojectid'=>$thematchingrule['zprojectid']);
+							
+						}else{
+							$inputparams=array('zprojectid'=>UNMATCHEDRULEPROJECT);
+						}						
+						createorUpdateZProjectTasks($theevent,$inputparams);
 					}else{
-						$inputparams=array('zprojectid'=>UNMATCHEDRULEPROJECT);
+						trigger_error('Processing Recurring Event ' . $geventid);
+						if(!empty($recurringid) )
+						{
+							trigger_error('Check and Add Parent Event entry ' .$recurringid);
+							$parenteventsql="select count(*) as parentrecordcount from parent_recurring_event where gsuiteparentid='$recurringid'";
+							$queryresult =mysqli_query($conn, $parenteventsql);
+							if ($queryresult) {
+								$totalrows=mysqli_num_rows($queryresult);
+								$resultcount = mysqli_fetch_array($queryresult)[0];
+								trigger_error('Total Rows Fetched from Parent Recurring Event ' . $totalrows . ' ' . $resultcount);
+								$formatteddate=new DateTime();
+								$onemonthafter=$formatteddate->add(new DateInterval('P30D'));
+								$upperlimit=$onemonthafter->getTimestamp();
+								if($resultcount > 0)
+								{	
+									/*
+									 $parentidsql="select id from parent_recurring_event where gsuiteparentid='$recurringid'";
+									 $queryresult =mysqli_query($conn, $parentidsql);
+									  if ($queryresult) {								
+											$parent_id = mysqli_fetch_array($queryresult)[0];
+									  }else{
+										trigger_error(' DBParent Event Select Query ' . $parentidsql . ' failed due to error:'.mysqli_error($conn));
+									}*/
+									
+								}else{												
+								
+									$useremail=$theevent['useremail'];
+									$calendarId=$theevent['calendarId'];
+									fetchEventbyId($useremail,$calendarId,$recurringid);
+									trigger_error('Insert parent recurring event entry for ' . $recurringid);
+									$parentinsert="INSERT INTO parent_recurring_event(gsuiteparentid,lastsynched,calendarid)
+													VALUES ('$recurringid',$upperlimit,$dbcalendarid)";
+									$queryresult =mysqli_query($conn, $parentinsert);
+									if ($queryresult === TRUE) {
+										  $parent_id = $conn->insert_id;
+										  trigger_error("ParentId Value " . $parent_id);
+										$onemonthafterStr=$onemonthafter->format('c');
+										$instanceresult=fetchEventInstanceInBatch($useremail,$calendarId,$recurringid,$onemonthafterStr);
+										if($instanceresult['status'] == 'success')
+										{
+											// Iterate and populate the DB
+											// Sync with Zoho
+											$instanceevents=$instanceresult['data'];
+											foreach($instanceevents as $instanceevent)
+											{
+												$instanceevent['calendarid']=$dbcalendarid;
+												$instanceevent['parentid']=$parent_id;
+												addEvent($instanceevent);
+												$ruleresult=runRulesforEvent($instanceevent);					
+												$matchingrules=$ruleresult['data'];
+												$inputparams=null;
+												if(count($matchingrules) > 0)
+												{
+													
+													$thematchingrule=$matchingrules[0]; // TODO: Sort and get the highest priority matching rule
+													trigger_error('Matching Rules Array ' . json_encode($thematchingrule));
+													$inputparams=array('zprojectid'=>$thematchingrule['zprojectid']);
+													
+												}else{
+													$inputparams=array('zprojectid'=>UNMATCHEDRULEPROJECT);
+												}						
+												createorUpdateZProjectTasks($instanceevent,$inputparams);
+											}
+										}
+									}
+								}								
+							}else{
+								trigger_error(' DBParent Event Select Query ' . $parenteventsql . ' failed due to error:'.mysqli_error($conn));
+							}
+						}
+						//fetchBatchEventInstances();
 					}
-					createorUpdateZProjectTasks($theevent,$inputparams);
 				}else if($eventresult['status'] == 'success')
 				{
-					$ruleresult=runRulesforEvent($theevent);
-					trigger_error('Matching Rules Array ' . json_encode($ruleresult));
-					$matchingrules=$ruleresult['data'];
-										$inputparams=null;
-					if(count($matchingrules) > 0)
-					{
-						$thematchingrule=$matchingrules[0]; // TODO: Sort and get the highest priority matching rule
-						$inputparams=array('zprojectid'=>$thematchingrule['zprojectid']);
-						
-					}else{
-						$inputparams=array('zprojectid'=>UNMATCHEDRULEPROJECT);
+					$issingle=empty($recurringeventid);
+						$ruleresult=runRulesforEvent($theevent);
+						trigger_error('SingleEvent Modified - Matching Rules Array ' . json_encode($ruleresult));
+						$matchingrules=$ruleresult['data'];
+											$inputparams=null;
+						if(count($matchingrules) > 0)
+						{
+							$thematchingrule=$matchingrules[0]; // TODO: Sort and get the highest priority matching rule
+							$inputparams=array('zprojectid'=>$thematchingrule['zprojectid']);
+							
+						}else{
+							$inputparams=array('zprojectid'=>UNMATCHEDRULEPROJECT);
 
-					}
-					createorUpdateZProjectTasks($theevent,$inputparams);
-					//checkModifiedEvent($theevent);
+						}
+						createorUpdateZProjectTasks($theevent,$inputparams);
+										
 				}else{
 					trigger_error('Something wrong happend while fetching event details for $geventid ' . json_encode($eventresult));
 				}
@@ -345,17 +503,39 @@ function fetchEventsFromSyncToken($calendarId, $synctoken,$useremail,$dbcalendar
 	return $response;
 }
 
-function fetchAllGsuiteUsers()
+
+function fetchEventInstanceInBatch($useremail, $calendarid, $recurringid, $formatteddate)
 {
-	try
-	{
+	$response=array();
+	try{
+
+		$client = new Google\Client();
+		$client->useApplicationDefaultCredentials();
+		$client->setApplicationName("Client_Library_Examples");
+		$client->setSubject($useremail);
+		$client->setScopes(['https://www.googleapis.com/auth/calendar','https://www.googleapis.com/auth/calendar.events']);	
+		$service = new Google_Service_Calendar($client);
+		
+		$optParams = array(
+			'maxResults' => 2000,
+			'timeMax'=>$formatteddate
+		);
+		 $eventlist=$service->events->instances($calendarid,$recurringid,$optParams);
+		 $events = $eventlist->getItems();
+		 trigger_error('Event Instances  ' . json_encode($events));
+		 $response['status']='success';
+		 $response['data']=$events;
+		
 
 	}catch(Exception $e)
 	{
-		trigger_error('Unable to fetch the Gsuite users ' . $e->getMessage());
+		trigger_error('Unable to fetch Batch events for calendar ' . $calendarid .' due to error ' . $e->getMessage());
+		$response['status']='failure';
+		$response['reason']=$e->getMessage();
 	}
+	return $response;
+	
 }
-
 
 
 /**

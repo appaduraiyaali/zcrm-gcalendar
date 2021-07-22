@@ -8,7 +8,7 @@ require_once(__DIR__.DIRECTORY_SEPARATOR.'CommonUtility.php');
 //removeUser('dummyuser@test.com');
 
 
-function addUser($gsuiteemail)
+function addUser($gsuiteemail,$username)
 {
 	$result=array('status'=>'');
 	$guserid='';
@@ -47,13 +47,13 @@ function addUser($gsuiteemail)
 				{
 					mysqli_select_db($conn, $dbname);
 					$guserid=$gcheckresult['guserid'];
-					$syncresult=doFullCalendarEventsSynch($gsuiteemail);
+					$syncresult=doFullCalendarEventsSynch($gsuiteemail,'primary');
 					if($syncresult['status'] == 'success')
 					{
 						$nexteventsynctoken=$syncresult['nexteventsynctoken'];
 					}
-					$usersql = "INSERT INTO calendaruser (guserid, email,status)
-					VALUES ('$guserid', '$gsuiteemail', 'active')";
+					$usersql = "INSERT INTO calendaruser (guserid, email,status,username)
+					VALUES ('$guserid', '$gsuiteemail', 'active','$username')";
 					$queryresult =mysqli_query($conn, $usersql);
 
 				if ($queryresult === TRUE) {
@@ -64,7 +64,7 @@ function addUser($gsuiteemail)
 				  $tokenexpiry=$currentimemilli+ (6*86400000) ; // after 6 days from now
 				  $channelid=random_strings();
 				  $watchresponse=setWatcher($gsuiteemail,$channelid);
-				  $resourceId=$watchresposne['resourceId'];
+				  $resourceId=$watchresponse['resourceId'];
 				  trigger_error( "New User record created successfully " .$last_id);
 				  $calendarsql= "INSERT INTO calendarconfig (gcalid, nextsynctoken,userid,tokenexpiry,channelid,watcherid)
 							VALUES ('primary', '$nexteventsynctoken', $last_id,$tokenexpiry,'$channelid','$resourceId')";
@@ -124,7 +124,7 @@ function fetchAllUsers()
 	$conn=getMysqlConnection();
 	if($conn)
 	{
-		$allprofilequery="select userid,email from calendaruser where status='active'";
+		$allprofilequery="select userid,email,username from calendaruser where status='active'";
 		mysqli_select_db($conn, $dbname);
 		$queryresult = mysqli_query($conn, $allprofilequery);
 		trigger_error('error:'.mysqli_error($conn));
@@ -138,6 +138,7 @@ function fetchAllUsers()
 				$userdata=array();			
 				$email=$fetchrow['email'];
 				$userdata['email']=$email;
+				$userdata['username']=$fetchrow['username'];
 				array_push($userdataarr,$userdata);
 			}						
 			$result['data']=$userdataarr;
@@ -157,7 +158,7 @@ function fetchAllUsers()
 
 function removeUser($useremail)
 {
-
+	trigger_error('User Deletion Initiated ' .$useremail);
 	$result=array("status"=>"success");
 	try{
 			$dbname=DBNAME;
@@ -218,7 +219,7 @@ function removeUser($useremail)
 
 			}else{
 				$result['status']='failure';
-				$result['reason']='User does not exist';
+				$result['reason']='User does not exist ' .$useremail;
 			}
 		}
 		closeConnection($conn);
