@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jun 01, 2021 at 05:06 AM
+-- Generation Time: Jun 18, 2021 at 12:12 AM
 -- Server version: 10.4.18-MariaDB
 -- PHP Version: 7.3.27
 
@@ -31,18 +31,8 @@ CREATE TABLE `attendees` (
   `id` int(11) NOT NULL,
   `eventid` int(11) NOT NULL,
   `attendee` varchar(75) NOT NULL,
-  `responsestatus` varchar(50) NOT NULL,
-  `ztaskid` bigint(30) DEFAULT NULL
+  `responsestatus` varchar(50) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
---
--- Dumping data for table `attendees`
---
-
-INSERT INTO `attendees` (`id`, `eventid`, `attendee`, `responsestatus`, `ztaskid`) VALUES
-(32, 16, 'appadurai@bizappln.com', 'accepted', 1600500000001428043),
-(33, 16, 'appadurai@yaalidatrixproj.com', 'accepted', 1600500000001429019),
-(34, 16, 'appadurai@gmail.com', 'needsAction', NULL);
 
 -- --------------------------------------------------------
 
@@ -56,15 +46,9 @@ CREATE TABLE `calendarconfig` (
   `nextsynctoken` varchar(50) NOT NULL,
   `tokenexpiry` bigint(20) NOT NULL,
   `userid` int(11) NOT NULL,
-  `channelid` varchar(50) NOT NULL
+  `channelid` varchar(50) NOT NULL,
+  `watcherid` varchar(50) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
---
--- Dumping data for table `calendarconfig`
---
-
-INSERT INTO `calendarconfig` (`calendarid`, `gcalid`, `nextsynctoken`, `tokenexpiry`, `userid`, `channelid`) VALUES
-(6, 'primary', 'CPDjy_WdtPACEPDjy_WdtPACGAUg6IvmsQE=', 1621820637558, 0, '4ede92f10b83c7da5fbc');
 
 -- --------------------------------------------------------
 
@@ -78,13 +62,6 @@ CREATE TABLE `calendaruser` (
   `email` varchar(100) NOT NULL,
   `status` varchar(25) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
---
--- Dumping data for table `calendaruser`
---
-
-INSERT INTO `calendaruser` (`userid`, `guserid`, `email`, `status`) VALUES
-(0, 'C00p350n8', 'appadurai@yaalidatrixproj.com', 'active');
 
 -- --------------------------------------------------------
 
@@ -102,15 +79,9 @@ CREATE TABLE `gevent` (
   `updated` bigint(20) NOT NULL,
   `status` varchar(20) NOT NULL,
   `description` text NOT NULL,
-  `title` varchar(1000) NOT NULL
+  `title` varchar(1000) NOT NULL,
+  `ztaskid` bigint(20) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
---
--- Dumping data for table `gevent`
---
-
-INSERT INTO `gevent` (`eventid`, `calendarid`, `geventid`, `starttime`, `endtime`, `created`, `updated`, `status`, `description`, `title`) VALUES
-(16, 6, '7j95ls5oo4cb4cj1hbsiuk2ut4', 1620271800, 1620275400, 1620197958, 1621304353, 'confirmed', 'Testing resource id notification an other parameters', 'Testing ResourceId NOtification');
 
 -- --------------------------------------------------------
 
@@ -130,13 +101,6 @@ CREATE TABLE `ruleconfig` (
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
--- Dumping data for table `ruleconfig`
---
-
-INSERT INTO `ruleconfig` (`ruleid`, `rulename`, `zprojectid`, `description`, `criteria`, `priority`, `emails`, `isactive`) VALUES
-(1, 'Sample Rule', '1600500000001081005', 'Sample Description for this rule..', '{\"condition\":\"OR\",\"rules\":[{\"id\":\"description\",\"field\":\"description\",\"type\":\"string\",\"input\":\"text\",\"operator\":\"contains\",\"value\":\"Demo\"},{\"id\":\"email\",\"field\":\"email\",\"type\":\"string\",\"input\":\"text\",\"operator\":\"equal\",\"value\":\"jhon@test.com\"},{\"condition\":\"OR\",\"rules\":[{\"condition\":\"OR\",\"rules\":[{\"id\":\"summary\",\"field\":\"summary\",\"type\":\"string\",\"input\":\"text\",\"operator\":\"contains\",\"value\":\"Meeting\"},{\"id\":\"email\",\"field\":\"email\",\"type\":\"string\",\"input\":\"text\",\"operator\":\"contains\",\"value\":\"zylker\"}]},{\"condition\":\"OR\",\"rules\":[{\"id\":\"description\",\"field\":\"description\",\"type\":\"string\",\"input\":\"text\",\"operator\":\"not_contains\",\"value\":\"google\"},{\"id\":\"summary\",\"field\":\"summary\",\"type\":\"string\",\"input\":\"text\",\"operator\":\"equal\",\"value\":\"Demo Meeting\"}]}]}],\"valid\":true}', 1, 'appadurai@bizappln.com', 1);
-
---
 -- Indexes for dumped tables
 --
 
@@ -144,26 +108,30 @@ INSERT INTO `ruleconfig` (`ruleid`, `rulename`, `zprojectid`, `description`, `cr
 -- Indexes for table `attendees`
 --
 ALTER TABLE `attendees`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `fk_attendees_gevent` (`eventid`);
 
 --
 -- Indexes for table `calendarconfig`
 --
 ALTER TABLE `calendarconfig`
   ADD PRIMARY KEY (`calendarid`),
-  ADD UNIQUE KEY `GCalId` (`gcalid`);
+  ADD UNIQUE KEY `GCalId` (`gcalid`),
+  ADD KEY `userid` (`userid`);
 
 --
 -- Indexes for table `calendaruser`
 --
 ALTER TABLE `calendaruser`
-  ADD PRIMARY KEY (`status`);
+  ADD PRIMARY KEY (`userid`),
+  ADD KEY `userid` (`userid`);
 
 --
 -- Indexes for table `gevent`
 --
 ALTER TABLE `gevent`
-  ADD PRIMARY KEY (`eventid`);
+  ADD PRIMARY KEY (`eventid`),
+  ADD KEY `calendarid` (`calendarid`);
 
 --
 -- Indexes for table `ruleconfig`
@@ -181,25 +149,47 @@ ALTER TABLE `ruleconfig`
 -- AUTO_INCREMENT for table `attendees`
 --
 ALTER TABLE `attendees`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=35;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `calendarconfig`
 --
 ALTER TABLE `calendarconfig`
-  MODIFY `calendarid` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `calendarid` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `gevent`
 --
 ALTER TABLE `gevent`
-  MODIFY `eventid` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
+  MODIFY `eventid` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `ruleconfig`
 --
 ALTER TABLE `ruleconfig`
-  MODIFY `ruleid` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `ruleid` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- Constraints for dumped tables
+--
+
+--
+-- Constraints for table `attendees`
+--
+ALTER TABLE `attendees`
+  ADD CONSTRAINT `fk_attendees_gevent` FOREIGN KEY (`eventid`) REFERENCES `gevent` (`eventid`) ON DELETE CASCADE ON UPDATE NO ACTION;
+
+--
+-- Constraints for table `calendarconfig`
+--
+ALTER TABLE `calendarconfig`
+  ADD CONSTRAINT `fk_calendarconfig_calendaruser` FOREIGN KEY (`userid`) REFERENCES `calendaruser` (`userid`) ON DELETE CASCADE ON UPDATE NO ACTION;
+
+--
+-- Constraints for table `gevent`
+--
+ALTER TABLE `gevent`
+  ADD CONSTRAINT `fk_gevent_calendarconfig` FOREIGN KEY (`calendarid`) REFERENCES `calendarconfig` (`calendarid`) ON DELETE CASCADE ON UPDATE NO ACTION;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
